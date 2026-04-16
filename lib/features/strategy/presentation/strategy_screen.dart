@@ -44,11 +44,11 @@ class _StrategyScreenState extends ConsumerState<StrategyScreen> {
             decoration: const InputDecoration(hintText: 'Durumu detaylı anlat'),
           ),
           const SizedBox(height: 16),
-          SelectionChipGroup(
+          PremiumDropdownField(
             label: 'İlişki türü',
             helperText: 'Öneriler, seçtiğin ilişki çerçevesine göre dengelenir.',
             value: relationshipType,
-            options: const ['Belirsiz', 'Flört', 'İlişki', 'Eski partner', 'Arkadaşlık'],
+            items: const ['Belirsiz', 'Flört', 'İlişki', 'Eski partner', 'Arkadaşlık'],
             onChanged: (value) => setState(() => relationshipType = value),
           ),
           const SizedBox(height: 18),

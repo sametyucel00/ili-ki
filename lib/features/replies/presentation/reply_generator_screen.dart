@@ -55,17 +55,17 @@ class _ReplyGeneratorScreenState extends ConsumerState<ReplyGeneratorScreen> {
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 16),
-          SelectionChipGroup(
+          PremiumDropdownField(
             label: 'Ton',
             value: tone,
-            options: const ['Tatlı', 'Cool', 'Net', 'Mesafeli', 'Flörtöz', 'Kibar', 'Sert ama saygılı', 'Kapanış odaklı'],
+            items: const ['Tatlı', 'Havalı', 'Net', 'Mesafeli', 'Flörtöz', 'Kibar', 'Sert ama saygılı', 'Kapanış odaklı'],
             onChanged: (value) => setState(() => tone = value),
           ),
           const SizedBox(height: 16),
-          SelectionChipGroup(
+          PremiumDropdownField(
             label: 'Uzunluk',
             value: responseLength,
-            options: const ['Kısa', 'Orta', 'Uzun'],
+            items: const ['Kısa', 'Orta', 'Uzun'],
             onChanged: (value) => setState(() => responseLength = value),
           ),
           const SizedBox(height: 8),

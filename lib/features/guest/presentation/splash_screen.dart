@@ -19,19 +19,48 @@ class SplashScreen extends ConsumerWidget {
     });
 
     return Scaffold(
+      backgroundColor: const Color(0xFF1A1516),
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Container(
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(
+                color: const Color(0xFF2A2022),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: const Color(0xFF4D363B)),
+              ),
+              child: const Icon(
+                Icons.favorite_border_rounded,
+                size: 36,
+                color: Color(0xFFF0B3AA),
+              ),
+            ),
+            const SizedBox(height: 22),
             Text(
               AppStrings.appName,
-              style: Theme.of(context).textTheme.headlineMedium,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: const Color(0xFFF6E8E2),
+                    fontWeight: FontWeight.w700,
+                  ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 8),
+            Text(
+              'İletişimi daha net gör',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: const Color(0xFFD8BBB4),
+                  ),
+            ),
+            const SizedBox(height: 24),
             const SizedBox(
               width: 28,
               height: 28,
-              child: CircularProgressIndicator(strokeWidth: 2.8),
+              child: CircularProgressIndicator(
+                strokeWidth: 2.6,
+                color: Color(0xFFF0B3AA),
+              ),
             ),
           ],
         ),

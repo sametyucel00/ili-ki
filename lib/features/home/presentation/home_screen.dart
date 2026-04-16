@@ -10,16 +10,11 @@ final completedAnalysisCountProvider = FutureProvider<int>((ref) {
   return ref.read(analysisRepositoryProvider).getCompletedAnalysisCount();
 });
 
-class HomeScreen extends ConsumerStatefulWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  ConsumerState<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends ConsumerState<HomeScreen> {
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authControllerProvider);
     final config = ref.watch(appConfigProvider);
     final connectivity = ref.watch(connectivityServiceProvider).watchConnection();
@@ -54,42 +49,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 );
               },
             ),
-            const SectionHeader('Hızlı başlat', subtitle: 'İhtiyacın olan akışı tek dokunuşla aç.'),
-            const SizedBox(height: 12),
-            GridView.count(
-              crossAxisCount: 2,
-              childAspectRatio: 1.18,
-              physics: const NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              children: [
-                _QuickActionCard(
-                  title: 'Mesaj Analizi',
-                  subtitle: 'Mesajın tonunu ve netliğini yorumla',
-                  icon: Icons.mark_chat_read_outlined,
-                  onTap: () => context.push('/analysis'),
-                ),
-                _QuickActionCard(
-                  title: 'Cevap Yazdır',
-                  subtitle: 'Hazır cevap seçenekleri oluştur',
-                  icon: Icons.auto_fix_high_outlined,
-                  onTap: () => context.push('/replies'),
-                ),
-                _QuickActionCard(
-                  title: 'Durumu Anlat',
-                  subtitle: 'Uzun durumu özetleyip yön bul',
-                  icon: Icons.insights_outlined,
-                  onTap: () => context.push('/strategy'),
-                ),
-                _QuickActionCard(
-                  title: 'Geçmiş',
-                  subtitle: 'Önceki analizlerine geri dön',
-                  icon: Icons.history_rounded,
-                  onTap: () => context.push('/history'),
-                ),
-              ],
+            const SectionHeader(
+              'Hızlı başlat',
+              subtitle: 'İhtiyacın olan akışı tek dokunuşla aç.',
             ),
+            const SizedBox(height: 12),
+            const _QuickActionRows(),
             const SizedBox(height: 18),
             auth.when(
               data: (user) => completedCount.when(
@@ -136,10 +101,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ],
                   ),
                 ),
-                loading: () => const SizedBox(height: 140, child: PrimaryCard(child: Center(child: CircularProgressIndicator()))),
+                loading: () => const SizedBox(
+                  height: 140,
+                  child: PrimaryCard(child: Center(child: CircularProgressIndicator())),
+                ),
                 error: (_, __) => const SizedBox.shrink(),
               ),
-              loading: () => const SizedBox(height: 140, child: PrimaryCard(child: Center(child: CircularProgressIndicator()))),
+              loading: () => const SizedBox(
+                height: 140,
+                child: PrimaryCard(child: Center(child: CircularProgressIndicator())),
+              ),
               error: (error, _) => ErrorStateView(
                 message: error.toString(),
                 onRetry: () => ref.read(authControllerProvider.notifier).refreshProfile(),
@@ -154,6 +125,61 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _QuickActionRows extends StatelessWidget {
+  const _QuickActionRows();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _QuickActionCard(
+                title: 'Mesaj Analizi',
+                subtitle: 'Mesajın tonunu ve netliğini yorumla',
+                icon: Icons.mark_chat_read_outlined,
+                onTap: () => context.push('/analysis'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _QuickActionCard(
+                title: 'Cevap Yazdır',
+                subtitle: 'Hazır cevap seçenekleri oluştur',
+                icon: Icons.auto_fix_high_outlined,
+                onTap: () => context.push('/replies'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _QuickActionCard(
+                title: 'Durumu Anlat',
+                subtitle: 'Uzun durumu özetleyip yön bul',
+                icon: Icons.insights_outlined,
+                onTap: () => context.push('/strategy'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _QuickActionCard(
+                title: 'Geçmiş',
+                subtitle: 'Önceki analizlerine geri dön',
+                icon: Icons.history_rounded,
+                onTap: () => context.push('/history'),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -176,16 +202,19 @@ class _QuickActionCard extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(24),
-      child: PrimaryCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, size: 30),
-            const Spacer(),
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 6),
-            Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
-          ],
+      child: SizedBox(
+        height: 150,
+        child: PrimaryCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, size: 30),
+              const Spacer(),
+              Text(title, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 6),
+              Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+            ],
+          ),
         ),
       ),
     );

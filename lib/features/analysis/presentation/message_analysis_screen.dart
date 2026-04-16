@@ -56,11 +56,11 @@ class _MessageAnalysisScreenState extends ConsumerState<MessageAnalysisScreen> {
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 16),
-          SelectionChipGroup(
+          PremiumDropdownField(
             label: 'İlişki türü',
             helperText: 'Bu seçim yorumun tonunu ve öneri dilini şekillendirir.',
             value: relationshipType,
-            options: const ['Belirsiz', 'Flört', 'İlişki', 'Eski partner', 'Arkadaşlık'],
+            items: const ['Belirsiz', 'Flört', 'İlişki', 'Eski partner', 'Arkadaşlık'],
             onChanged: (value) => setState(() => relationshipType = value),
           ),
           const SizedBox(height: 20),

@@ -59,7 +59,7 @@ async function getConfig(): Promise<Config> {
   const snapshot = await db.collection('app_config').doc('runtime').get();
   const data = snapshot.data() ?? {};
   return {
-    starterCredits: Number(data.starterCredits ?? 3),
+    starterCredits: Number(data.starterCredits ?? 1),
     freeDailyCredits: Number(data.freeDailyCredits ?? 2),
     linkBonusCredits: Number(data.linkBonusCredits ?? 3),
     replyGenerationCost: Number(data.replyGenerationCost ?? 1),

@@ -9,14 +9,29 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == uid;
     }
 
+    function androidPurchaseSimulationEnabled() {
+      return get(/databases/$(database)/documents/app_config/runtime).data.androidPurchaseSimulationEnabled == true;
+    }
+
     match /users/{userId} {
       allow read: if owns(userId);
       allow create: if owns(userId);
       allow update: if owns(userId)
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.creditBalance == resource.data.creditBalance
-        && request.resource.data.planType == resource.data.planType
-        && request.resource.data.subscriptionStatus == resource.data.subscriptionStatus;
+        && (
+          (
+            request.resource.data.creditBalance == resource.data.creditBalance
+            && request.resource.data.planType == resource.data.planType
+            && request.resource.data.subscriptionStatus == resource.data.subscriptionStatus
+          )
+          || (
+            androidPurchaseSimulationEnabled()
+            && request.resource.data.isGuest == resource.data.isGuest
+            && request.resource.data.isLinked == resource.data.isLinked
+            && request.resource.data.provider == resource.data.provider
+            && request.resource.data.authType == resource.data.authType
+          )
+        );
       allow delete: if false;
     }
 

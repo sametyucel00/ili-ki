@@ -244,3 +244,69 @@ class SelectionChipGroup extends StatelessWidget {
     );
   }
 }
+
+class PremiumDropdownField extends StatelessWidget {
+  const PremiumDropdownField({
+    required this.label,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+    this.helperText,
+    super.key,
+  });
+
+  final String label;
+  final String value;
+  final List<String> items;
+  final ValueChanged<String> onChanged;
+  final String? helperText;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: theme.textTheme.titleSmall),
+        if (helperText != null) ...[
+          const SizedBox(height: 6),
+          Text(helperText!, style: theme.textTheme.bodySmall),
+        ],
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.38),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
+            ),
+          ),
+          child: DropdownButtonFormField<String>(
+            initialValue: value,
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              filled: false,
+              contentPadding: EdgeInsets.symmetric(vertical: 10),
+            ),
+            dropdownColor: theme.colorScheme.surface,
+            icon: const Icon(Icons.keyboard_arrow_down_rounded),
+            items: items
+                .map((item) => DropdownMenuItem<String>(
+                      value: item,
+                      child: Text(item),
+                    ))
+                .toList(),
+            onChanged: (next) {
+              if (next != null) {
+                onChanged(next);
+              }
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}

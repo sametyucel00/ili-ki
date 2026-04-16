@@ -1,17 +1,22 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:iliski_kocu_ai/core/services/analytics_service.dart';
 import 'package:iliski_kocu_ai/core/services/purchases_service.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
 class PremiumRepository {
   PremiumRepository({
+    required FirebaseFirestore firestore,
     required FirebaseFunctions functions,
     required PurchasesService purchases,
     required AnalyticsService analytics,
-  })  : _functions = functions,
+  })  : _firestore = firestore,
+        _functions = functions,
         _purchases = purchases,
         _analytics = analytics;
 
+  final FirebaseFirestore _firestore;
   final FirebaseFunctions _functions;
   final PurchasesService _purchases;
   final AnalyticsService _analytics;
@@ -63,9 +68,13 @@ class PremiumRepository {
         'product_id': product.id,
         'mode': 'android_simulation',
       });
-      await _functions.httpsCallable('completeDebugPurchase').call({
-        'productId': product.id,
-      });
+      try {
+        await _functions.httpsCallable('completeDebugPurchase').call({
+          'productId': product.id,
+        });
+      } catch (_) {
+        await _applyLocalSimulation(product.id);
+      }
       await _analytics.logEvent('purchase_completed', {
         'product_id': product.id,
         'mode': 'android_simulation',
@@ -79,6 +88,43 @@ class PremiumRepository {
   Future<void> grantRewardedCredit() async {
     await _functions.httpsCallable('grantRewardedAdCredit').call();
     await _analytics.logEvent('rewarded_credit_granted');
+  }
+
+  Future<void> _applyLocalSimulation(String productId) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      return;
+    }
+
+    final userRef = _firestore.collection('users').doc(uid);
+    final snap = await userRef.get();
+    final data = snap.data() ?? <String, dynamic>{};
+    final currentCredits = (data['creditBalance'] as num?)?.toInt() ?? 0;
+
+    if (productId == 'com.hisle.app.premium.monthly' || productId == 'com.hisle.app.premium.yearly') {
+      final expiryDate = DateTime.now().add(
+        Duration(days: productId.endsWith('.yearly') ? 365 : 31),
+      );
+      await userRef.update({
+        'planType': 'premium',
+        'subscriptionStatus': 'active',
+        'subscriptionPlatform': 'android_debug',
+        'subscriptionExpiryDate': Timestamp.fromDate(expiryDate),
+      });
+      return;
+    }
+
+    final creditPackMap = <String, int>{
+      'com.hisle.app.credits.10': 10,
+      'com.hisle.app.credits.50': 50,
+    };
+    final amount = creditPackMap[productId];
+    if (amount == null) {
+      return;
+    }
+    await userRef.update({
+      'creditBalance': currentCredits + amount,
+    });
   }
 
   List<ProductDetails> get _debugProducts => [

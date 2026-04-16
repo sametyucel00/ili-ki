@@ -82,6 +82,7 @@ final historyRepositoryProvider = Provider<HistoryRepository>(
 
 final premiumRepositoryProvider = Provider<PremiumRepository>(
   (ref) => PremiumRepository(
+    firestore: ref.watch(firestoreProvider),
     functions: ref.watch(firebaseFunctionsProvider),
     purchases: ref.watch(purchasesServiceProvider),
     analytics: ref.watch(analyticsServiceProvider),

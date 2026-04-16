@@ -3,12 +3,7 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="#F6DDD3" />
+            <solid android:color="#1E1718" />
         </shape>
-    </item>
-    <item>
-        <bitmap
-            android:gravity="center"
-            android:src="@drawable/launch_brand" />
     </item>
 </layer-list>

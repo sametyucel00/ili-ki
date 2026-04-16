@@ -58,7 +58,7 @@ class AuthRepository {
           linkedAt: null,
           language: 'tr',
           planType: 'free',
-          creditBalance: 0,
+          creditBalance: 1,
           isOnboarded: false,
           subscriptionStatus: 'inactive',
           subscriptionPlatform: null,
@@ -67,9 +67,15 @@ class AuthRepository {
           deletedAt: null,
         ).toMap(),
       );
-      await _functions.httpsCallable('grantStarterCredits').call();
     } else {
-      await document.update({'lastLoginAt': Timestamp.fromDate(now)});
+      final existingData = snapshot.data()!;
+      final shouldGrantStarterLocally =
+          (existingData['creditBalance'] as num?)?.toInt() == 0 &&
+          ((existingData['isOnboarded'] as bool?) ?? false) == false;
+      await document.update({
+        'lastLoginAt': Timestamp.fromDate(now),
+        if (shouldGrantStarterLocally) 'creditBalance': 1,
+      });
     }
     final fresh = await document.get();
     return AppUser.fromMap(fresh.data()!);
