@@ -5,6 +5,7 @@ import 'package:iliski_kocu_ai/core/utils/error_text.dart';
 import 'package:iliski_kocu_ai/features/analysis/presentation/analysis_controller.dart';
 import 'package:iliski_kocu_ai/shared/models/analysis_record.dart';
 import 'package:iliski_kocu_ai/shared/widgets/common_widgets.dart';
+import 'package:iliski_kocu_ai/shared/widgets/rewarded_credit_sheet.dart';
 
 class StrategyScreen extends ConsumerStatefulWidget {
   const StrategyScreen({super.key});
@@ -60,13 +61,24 @@ class _StrategyScreenState extends ConsumerState<StrategyScreen> {
           const SizedBox(height: 18),
           if (state.isLoading) const SizedBox(height: 280, child: LoadingList()),
           if (state.hasError)
-            ErrorStateView(
-              message: toUserFacingError(state.error!),
-              onRetry: () => ref.read(analysisActionProvider.notifier).createStrategy(
-                    inputText: situationController.text.trim(),
-                    relationshipType: relationshipType,
+            isInsufficientCreditsError(state.error!)
+                ? EmptyStateView(
+                    title: 'Kredin bitti',
+                    description: 'İstersen reklam izle ve 1 analiz hakkı kazan. İstersen premium seçeneklerine geç.',
+                    buttonText: 'Seçenekleri Aç',
+                    onPressed: () => showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      builder: (_) => const RewardedCreditSheet(),
+                    ),
+                  )
+                : ErrorStateView(
+                    message: toUserFacingError(state.error!),
+                    onRetry: () => ref.read(analysisActionProvider.notifier).createStrategy(
+                          inputText: situationController.text.trim(),
+                          relationshipType: relationshipType,
+                        ),
                   ),
-            ),
         ],
       ),
     );

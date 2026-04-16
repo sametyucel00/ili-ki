@@ -12,6 +12,7 @@ import 'package:iliski_kocu_ai/core/services/local_cache_service.dart';
 import 'package:iliski_kocu_ai/core/services/notification_service.dart';
 import 'package:iliski_kocu_ai/core/services/paywall_service.dart';
 import 'package:iliski_kocu_ai/core/services/purchases_service.dart';
+import 'package:iliski_kocu_ai/core/services/rewarded_ad_service.dart';
 import 'package:iliski_kocu_ai/core/services/remote_config_service.dart';
 import 'package:iliski_kocu_ai/features/analysis/data/analysis_repository.dart';
 import 'package:iliski_kocu_ai/features/auth/data/auth_repository.dart';
@@ -48,6 +49,9 @@ final notificationServiceProvider = Provider<NotificationService>(
 final paywallServiceProvider = Provider<PaywallService>((ref) => const PaywallService());
 final purchasesServiceProvider = Provider<PurchasesService>(
   (ref) => PurchasesService(ref.watch(analyticsServiceProvider)),
+);
+final rewardedAdServiceProvider = Provider<RewardedAdService>(
+  (ref) => RewardedAdService(ref.watch(analyticsServiceProvider)),
 );
 
 final authRepositoryProvider = Provider<AuthRepository>(

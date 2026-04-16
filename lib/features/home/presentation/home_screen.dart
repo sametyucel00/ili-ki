@@ -5,6 +5,7 @@ import 'package:iliski_kocu_ai/core/constants/app_strings.dart';
 import 'package:iliski_kocu_ai/core/services/providers.dart';
 import 'package:iliski_kocu_ai/features/auth/presentation/auth_controller.dart';
 import 'package:iliski_kocu_ai/shared/widgets/common_widgets.dart';
+import 'package:iliski_kocu_ai/shared/widgets/rewarded_credit_sheet.dart';
 
 final completedAnalysisCountProvider = FutureProvider<int>((ref) {
   return ref.read(analysisRepositoryProvider).getCompletedAnalysisCount();
@@ -120,13 +121,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       )) ...[
                         const SizedBox(height: 12),
                         InfoBanner(
-                          icon: Icons.workspace_premium_outlined,
-                          message: 'Devam etmek için kredi alabilir veya premium’a geçebilirsin.',
-                          actionLabel: 'Seçenekleri Gör',
+                          icon: Icons.ondemand_video_rounded,
+                          message: 'Kredin bittiğinde istersen 1 reklam izle → 1 analiz kazan seçeneğini kullanabilirsin.',
+                          actionLabel: 'Seçenekleri Aç',
                           onAction: () async {
                             await ref.read(analyticsServiceProvider).logEvent('paywall_viewed', {'source': 'soft_banner'});
                             if (context.mounted) {
-                              context.push('/premium');
+                              await showModalBottomSheet<void>(
+                                context: context,
+                                isScrollControlled: true,
+                                builder: (_) => const RewardedCreditSheet(),
+                              );
                             }
                           },
                         ),

@@ -7,6 +7,7 @@ import 'package:iliski_kocu_ai/core/utils/error_text.dart';
 import 'package:iliski_kocu_ai/features/analysis/presentation/analysis_controller.dart';
 import 'package:iliski_kocu_ai/shared/models/analysis_record.dart';
 import 'package:iliski_kocu_ai/shared/widgets/common_widgets.dart';
+import 'package:iliski_kocu_ai/shared/widgets/rewarded_credit_sheet.dart';
 
 class ReplyGeneratorScreen extends ConsumerStatefulWidget {
   const ReplyGeneratorScreen({super.key});
@@ -81,16 +82,27 @@ class _ReplyGeneratorScreenState extends ConsumerState<ReplyGeneratorScreen> {
           const SizedBox(height: 18),
           if (state.isLoading) const SizedBox(height: 280, child: LoadingList()),
           if (state.hasError)
-            ErrorStateView(
-              message: toUserFacingError(state.error!),
-              onRetry: () => ref.read(analysisActionProvider.notifier).generateReplies(
-                    inputText: messageController.text.trim(),
-                    context: contextController.text.trim().isEmpty ? null : contextController.text.trim(),
-                    tone: tone,
-                    responseLength: responseLength,
-                    emojiPreference: emojiPreference,
+            isInsufficientCreditsError(state.error!)
+                ? EmptyStateView(
+                    title: 'Kredin bitti',
+                    description: 'İstersen reklam izle ve 1 analiz hakkı kazan. Ya da kredi/premium seçeneklerine bak.',
+                    buttonText: 'Seçenekleri Aç',
+                    onPressed: () => showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      builder: (_) => const RewardedCreditSheet(),
+                    ),
+                  )
+                : ErrorStateView(
+                    message: toUserFacingError(state.error!),
+                    onRetry: () => ref.read(analysisActionProvider.notifier).generateReplies(
+                          inputText: messageController.text.trim(),
+                          context: contextController.text.trim().isEmpty ? null : contextController.text.trim(),
+                          tone: tone,
+                          responseLength: responseLength,
+                          emojiPreference: emojiPreference,
+                        ),
                   ),
-            ),
           if (replyResult != null) ...[
             ...replyResult.aiReplyOptions.map(
               (reply) => Padding(

@@ -50,6 +50,8 @@ type Config = {
   aiCooldownSeconds: number;
   latestPromptVersion: string;
   softPaywallThreshold: number;
+  rewardedAdCredits: number;
+  rewardedAdDailyLimit: number;
 };
 
 async function getConfig(): Promise<Config> {
@@ -67,6 +69,8 @@ async function getConfig(): Promise<Config> {
     aiCooldownSeconds: Number(data.aiCooldownSeconds ?? 20),
     latestPromptVersion: String(data.latestPromptVersion ?? 'v1'),
     softPaywallThreshold: Number(data.softPaywallThreshold ?? 2),
+    rewardedAdCredits: Number(data.rewardedAdCredits ?? 1),
+    rewardedAdDailyLimit: Number(data.rewardedAdDailyLimit ?? 3),
   };
 }
 
@@ -158,6 +162,18 @@ async function awardCredits(uid: string, amount: number, reason: string) {
   const next = Number(snap.data()?.creditBalance ?? 0) + amount;
   await userRef.update({ creditBalance: next });
   await logCredit(uid, 'grant', amount, next, reason);
+}
+
+async function countTransactionsToday(uid: string, type: string) {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const snapshot = await db
+    .collection('credit_transactions')
+    .where('uid', '==', uid)
+    .where('type', '==', type)
+    .where('createdAt', '>=', start)
+    .get();
+  return snapshot.size;
 }
 
 async function callModel(
@@ -414,6 +430,29 @@ export const grantDailyCredits = onCall(async (request) => {
   const config = await getConfig();
   await awardCredits(uid, config.freeDailyCredits, 'daily_credits');
   return { granted: true };
+});
+
+export const grantRewardedAdCredit = onCall(async (request) => {
+  const uid = assertAuth(request.auth?.uid);
+  const config = await getConfig();
+  const count = await countTransactionsToday(uid, 'rewarded_ad');
+  if (count >= config.rewardedAdDailyLimit) {
+    throw new HttpsError('resource-exhausted', 'Rewarded ad daily limit reached.');
+  }
+  const userRef = db.collection('users').doc(uid);
+  const snap = await userRef.get();
+  const next = Number(snap.data()?.creditBalance ?? 0) + config.rewardedAdCredits;
+  await userRef.update({ creditBalance: next });
+  await db.collection('credit_transactions').add({
+    id: db.collection('credit_transactions').doc().id,
+    uid,
+    type: 'rewarded_ad',
+    amount: config.rewardedAdCredits,
+    balanceAfter: next,
+    note: 'rewarded_ad_credit',
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+  return { granted: true, amount: config.rewardedAdCredits };
 });
 
 export const deductCredits = onCall(async (request) => {

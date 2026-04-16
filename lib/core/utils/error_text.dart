@@ -14,3 +14,8 @@ String toUserFacingError(Object error) {
   }
   return 'İşlem şu anda tamamlanamadı. Lütfen tekrar dene.';
 }
+
+bool isInsufficientCreditsError(Object error) {
+  final text = error.toString();
+  return text.contains('Insufficient credits') || text.contains('Yeterli kredin yok');
+}

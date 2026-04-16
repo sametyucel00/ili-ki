@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:iliski_kocu_ai/core/services/providers.dart';
 import 'package:iliski_kocu_ai/features/auth/presentation/auth_controller.dart';
 import 'package:iliski_kocu_ai/shared/widgets/common_widgets.dart';
+import 'package:iliski_kocu_ai/shared/widgets/rewarded_credit_sheet.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
 final productsProvider = FutureProvider.autoDispose<List<ProductDetails>>((ref) async {
@@ -37,6 +38,15 @@ class PremiumScreen extends ConsumerWidget {
                     child: const Text('Satın alma öncesi hesabını bağla'),
                   ),
                 ],
+                const SizedBox(height: 12),
+                OutlinedButton(
+                  onPressed: () => showModalBottomSheet<void>(
+                    context: context,
+                    isScrollControlled: true,
+                    builder: (_) => const RewardedCreditSheet(),
+                  ),
+                  child: const Text('1 reklam izle → 1 analiz kazan'),
+                ),
               ],
             ),
           ),

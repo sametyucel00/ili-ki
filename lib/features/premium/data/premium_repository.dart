@@ -41,4 +41,9 @@ class PremiumRepository {
   }
 
   Future<void> buyProduct(ProductDetails product) => _purchases.buy(product);
+
+  Future<void> grantRewardedCredit() async {
+    await _functions.httpsCallable('grantRewardedAdCredit').call();
+    await _analytics.logEvent('rewarded_credit_granted');
+  }
 }
