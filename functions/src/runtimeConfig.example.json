@@ -9,5 +9,6 @@
   "linkedDailyLimit": 10,
   "aiCooldownSeconds": 20,
   "latestPromptVersion": "v1",
-  "softPaywallThreshold": 2
+  "softPaywallThreshold": 2,
+  "androidPurchaseSimulationEnabled": true
 }

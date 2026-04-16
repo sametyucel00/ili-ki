@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iliski_kocu_ai/core/config/env.dart';
 import 'package:iliski_kocu_ai/core/services/providers.dart';
 import 'package:iliski_kocu_ai/features/auth/presentation/auth_controller.dart';
 import 'package:iliski_kocu_ai/shared/widgets/common_widgets.dart';
@@ -19,6 +20,7 @@ class PremiumScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final offerings = ref.watch(productsProvider);
     final user = ref.watch(authControllerProvider).valueOrNull;
+    final isAndroidSimulation = Env.useAndroidPurchaseSimulation;
 
     return AppScaffold(
       title: 'Premium ve Krediler',
@@ -28,14 +30,25 @@ class PremiumScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Mevcut kredi: ${user?.creditBalance ?? 0}', style: Theme.of(context).textTheme.titleLarge),
+                Text(
+                  'Mevcut kredi: ${user?.creditBalance ?? 0}',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
                 const SizedBox(height: 10),
-                Text(user?.isPremium == true ? 'Premium aktif' : 'Premium ile daha derin analiz ve yüksek limit açılır'),
+                Text(
+                  user?.isPremium == true
+                      ? 'Premium aktif'
+                      : 'Premium ile daha derin analiz ve yuksek limit acilir',
+                ),
                 if (user?.isGuest == true) ...[
                   const SizedBox(height: 12),
                   OutlinedButton(
                     onPressed: () => context.push('/link-account'),
-                    child: const Text('Satın alma öncesi hesabını bağla'),
+                    child: Text(
+                      isAndroidSimulation
+                          ? 'Hesabini baglamak istersen sonra da yapabilirsin'
+                          : 'Satin alma oncesi hesabini bagla',
+                    ),
                   ),
                 ],
                 const SizedBox(height: 12),
@@ -45,21 +58,28 @@ class PremiumScreen extends ConsumerWidget {
                     isScrollControlled: true,
                     builder: (_) => const RewardedCreditSheet(),
                   ),
-                  child: const Text('1 reklam izle → 1 analiz kazan'),
+                  child: const Text('1 reklam izle -> 1 analiz kazan'),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
-          const PrimaryCard(
+          PrimaryCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SectionHeader('Plan karşılaştırması'),
-                SizedBox(height: 12),
-                Text('• Misafir: sınırlı kredi, lokal geçmiş'),
-                Text('• Bağlı kullanıcı: senkron, geri yükleme, bonus kredi'),
-                Text('• Premium: daha yüksek limit, derin analiz, uzun geçmiş'),
+                const SectionHeader('Plan karsilastirmasi'),
+                const SizedBox(height: 12),
+                const Text('- Misafir: sinirli kredi, lokal gecmis'),
+                const Text('- Bagli kullanici: senkron, geri yukleme, bonus kredi'),
+                const Text('- Premium: daha yuksek limit, derin analiz, uzun gecmis'),
+                if (isAndroidSimulation) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Android test modu acik. Bu ekrandaki satin alma butonlarina bastiginda islem dogrudan hesabina uygulanir.',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
               ],
             ),
           ),
@@ -72,7 +92,9 @@ class PremiumScreen extends ConsumerWidget {
                   const SectionHeader('Paketler'),
                   const SizedBox(height: 12),
                   if (data.isEmpty)
-                    const Text('Store ürünleri henüz bulunamadı. Product ID’lerini mağazada oluşturup aynı isimlerle tanımla.')
+                    const Text(
+                      'Store urunleri henuz bulunamadi. Product IDlerini magazada ayni isimlerle tanimla.',
+                    )
                   else
                     ...data.map(
                       (product) => Padding(
@@ -83,7 +105,7 @@ class PremiumScreen extends ConsumerWidget {
                           subtitle: Text(product.description),
                           trailing: FilledButton(
                             onPressed: () async {
-                              if (user?.isGuest == true) {
+                              if (user?.isGuest == true && !isAndroidSimulation) {
                                 await ref.read(analyticsServiceProvider).logEvent(
                                   'account_link_prompt_shown',
                                   {'source': 'purchase_attempt'},
@@ -94,6 +116,7 @@ class PremiumScreen extends ConsumerWidget {
                                 return;
                               }
                               await ref.read(premiumRepositoryProvider).buyProduct(product);
+                              await ref.read(authControllerProvider.notifier).refreshProfile();
                             },
                             child: Text(product.price),
                           ),
@@ -103,8 +126,9 @@ class PremiumScreen extends ConsumerWidget {
                   OutlinedButton(
                     onPressed: () async {
                       await ref.read(premiumRepositoryProvider).restore();
+                      await ref.read(authControllerProvider.notifier).refreshProfile();
                     },
-                    child: const Text('Satın alımları geri yükle'),
+                    child: const Text('Satin alimlari geri yukle'),
                   ),
                 ],
               ),

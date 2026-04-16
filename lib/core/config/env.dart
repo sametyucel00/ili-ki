@@ -1,7 +1,14 @@
+import 'dart:io';
+
 class Env {
   static const functionsRegion = String.fromEnvironment(
     'FUNCTIONS_REGION',
     defaultValue: 'europe-west1',
+  );
+
+  static const enableAndroidPurchaseSimulation = bool.fromEnvironment(
+    'ENABLE_ANDROID_PURCHASE_SIMULATION',
+    defaultValue: true,
   );
 
   static const premiumProductIds = <String>[
@@ -10,4 +17,7 @@ class Env {
     'com.hisle.app.credits.10',
     'com.hisle.app.credits.50',
   ];
+
+  static bool get useAndroidPurchaseSimulation =>
+      enableAndroidPurchaseSimulation && Platform.isAndroid;
 }

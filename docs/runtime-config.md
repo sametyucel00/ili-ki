@@ -1,11 +1,11 @@
 # Firestore `app_config/runtime`
 
-Firestore Console'da şu yolu aç:
+Firestore Console'da su yolu ac:
 
 - `app_config`
 - document id: `runtime`
 
-Alanları şu değerlerle oluştur:
+Alanlari su degerlerle olustur:
 
 ```json
 {
@@ -21,31 +21,34 @@ Alanları şu değerlerle oluştur:
   "latestPromptVersion": "v1",
   "softPaywallThreshold": 2,
   "rewardedAdCredits": 1,
-  "rewardedAdDailyLimit": 3
+  "rewardedAdDailyLimit": 3,
+  "androidPurchaseSimulationEnabled": true
 }
 ```
 
-Öneri mantığı:
+Oneri mantigi:
 
 - `starterCredits: 3`
-  İlk deneyimde ürünü hissettirmek için yeterli.
+  Ilk deneyimde urunu hissettirmek icin yeterli.
 - `freeDailyCredits: 2`
-  Tamamen kilitli hissettirmez ama monetization'ı da öldürmez.
+  Tamamen kilitli hissettirmez ama monetization'i da oldurmez.
 - `linkBonusCredits: 3`
-  Hesap bağlama için net ama abartısız ödül.
+  Hesap baglama icin net ama abartisiz odul.
 - `messageAnalysisCost: 1`
 - `replyGenerationCost: 1`
 - `situationStrategyCost: 2`
-  Daha ağır analiz olduğu için strateji daha pahalı.
+  Daha agir analiz oldugu icin strateji daha pahali.
 - `guestDailyLimit: 3`
-  Guest-first deneyimi korur ama abuse'u sınırlar.
+  Guest-first deneyimi korur ama abuse'u sinirlar.
 - `linkedDailyLimit: 10`
-  Hesap bağlamayı anlamlı şekilde ödüllendirir.
+  Hesap baglamayi anlamli sekilde odullendirir.
 - `aiCooldownSeconds: 20`
-  Spam ve maliyet patlamasını azaltır.
+  Spam ve maliyet patlamasini azaltir.
 - `softPaywallThreshold: 2`
-  Kullanıcı değer gördükten sonra paywall gösterilir.
+  Kullanici deger gordukten sonra paywall gosterilir.
 - `rewardedAdCredits: 1`
-  Senin istediğin akışla birebir uyumlu.
+  1 reklam = 1 analiz akisiyla uyumludur.
 - `rewardedAdDailyLimit: 3`
-  Reklam suistimalini sınırlar ama kullanıcıyı da boğmaz.
+  Reklam suistimalini sinirlar ama kullaniciyi da bogmaz.
+- `androidPurchaseSimulationEnabled: true`
+  Android'de satin alma butonlarini gecici olarak test satin almasi gibi calistirir.

@@ -52,6 +52,7 @@ type Config = {
   softPaywallThreshold: number;
   rewardedAdCredits: number;
   rewardedAdDailyLimit: number;
+  androidPurchaseSimulationEnabled: boolean;
 };
 
 async function getConfig(): Promise<Config> {
@@ -71,6 +72,7 @@ async function getConfig(): Promise<Config> {
     softPaywallThreshold: Number(data.softPaywallThreshold ?? 2),
     rewardedAdCredits: Number(data.rewardedAdCredits ?? 1),
     rewardedAdDailyLimit: Number(data.rewardedAdDailyLimit ?? 3),
+    androidPurchaseSimulationEnabled: Boolean(data.androidPurchaseSimulationEnabled ?? true),
   };
 }
 
@@ -484,6 +486,62 @@ export const verifySubscription = onCall(async (request) => {
     subscriptionExpiryDate: request.data?.expiryDate ?? null,
   });
   return { ok: true };
+});
+
+export const completeDebugPurchase = onCall(async (request) => {
+  const uid = assertAuth(request.auth?.uid);
+  const config = await getConfig();
+  if (!config.androidPurchaseSimulationEnabled) {
+    throw new HttpsError('permission-denied', 'Android purchase simulation is disabled.');
+  }
+
+  const productId = String(request.data?.productId ?? '');
+  const userRef = db.collection('users').doc(uid);
+
+  if (productId === 'com.hisle.app.premium.monthly' || productId === 'com.hisle.app.premium.yearly') {
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + (productId.endsWith('.yearly') ? 365 : 31));
+
+    await db.collection('subscriptions').doc(uid).set(
+      {
+        id: uid,
+        uid,
+        platform: 'android_debug',
+        productId,
+        status: 'active',
+        startDate: admin.firestore.FieldValue.serverTimestamp(),
+        expiryDate,
+        autoRenew: false,
+        lastVerifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+
+    await userRef.set(
+      {
+        planType: 'premium',
+        subscriptionStatus: 'active',
+        subscriptionPlatform: 'android_debug',
+        subscriptionExpiryDate: expiryDate,
+      },
+      { merge: true },
+    );
+
+    return { ok: true, entitlement: 'premium', productId };
+  }
+
+  const creditPackMap: Record<string, number> = {
+    'com.hisle.app.credits.10': 10,
+    'com.hisle.app.credits.50': 50,
+  };
+  const amount = creditPackMap[productId];
+
+  if (!amount) {
+    throw new HttpsError('invalid-argument', 'Unknown product id.');
+  }
+
+  await awardCredits(uid, amount, `android_debug_purchase:${productId}`);
+  return { ok: true, entitlement: 'credits', amount, productId };
 });
 
 export const restoreEntitlementsIfNeeded = onCall(async (request) => {

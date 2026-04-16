@@ -16,7 +16,18 @@ class PremiumRepository {
   final PurchasesService _purchases;
   final AnalyticsService _analytics;
 
+  bool get useAndroidPurchaseSimulation => _purchases.useAndroidPurchaseSimulation;
+
   Future<List<ProductDetails>> loadProducts() async {
+    if (useAndroidPurchaseSimulation) {
+      final available = await _purchases.isAvailable();
+      if (!available) {
+        return _debugProducts;
+      }
+      final storeProducts = await _purchases.getProducts();
+      return storeProducts.isEmpty ? _debugProducts : storeProducts;
+    }
+
     final available = await _purchases.isAvailable();
     if (!available) {
       return [];
@@ -35,15 +46,77 @@ class PremiumRepository {
   }
 
   Future<void> restore() async {
+    if (useAndroidPurchaseSimulation) {
+      await _analytics.logEvent('purchase_restored', {'mode': 'android_simulation'});
+      await _functions.httpsCallable('restoreEntitlementsIfNeeded').call();
+      return;
+    }
+
     await _purchases.restorePurchases();
     await _functions.httpsCallable('restoreEntitlementsIfNeeded').call();
     await _analytics.logEvent('purchase_restored');
   }
 
-  Future<void> buyProduct(ProductDetails product) => _purchases.buy(product);
+  Future<void> buyProduct(ProductDetails product) async {
+    if (useAndroidPurchaseSimulation) {
+      await _analytics.logEvent('purchase_started', {
+        'product_id': product.id,
+        'mode': 'android_simulation',
+      });
+      await _functions.httpsCallable('completeDebugPurchase').call({
+        'productId': product.id,
+      });
+      await _analytics.logEvent('purchase_completed', {
+        'product_id': product.id,
+        'mode': 'android_simulation',
+      });
+      return;
+    }
+
+    await _purchases.buy(product);
+  }
 
   Future<void> grantRewardedCredit() async {
     await _functions.httpsCallable('grantRewardedAdCredit').call();
     await _analytics.logEvent('rewarded_credit_granted');
   }
+
+  List<ProductDetails> get _debugProducts => [
+        ProductDetails(
+          id: 'com.hisle.app.premium.monthly',
+          title: 'Premium Aylık (Android test modu)',
+          description: 'Butona bastığında anında premium aktif olur.',
+          price: 'Test satın al',
+          rawPrice: 0,
+          currencyCode: 'TRY',
+          currencySymbol: '₺',
+        ),
+        ProductDetails(
+          id: 'com.hisle.app.premium.yearly',
+          title: 'Premium Yıllık (Android test modu)',
+          description: 'Yıllık paketi mağaza beklemeden denetle.',
+          price: 'Test satın al',
+          rawPrice: 0,
+          currencyCode: 'TRY',
+          currencySymbol: '₺',
+        ),
+        ProductDetails(
+          id: 'com.hisle.app.credits.10',
+          title: '10 Kredi (Android test modu)',
+          description: 'Butona bastığında hesabına 10 kredi eklenir.',
+          price: 'Test ekle',
+          rawPrice: 0,
+          currencyCode: 'TRY',
+          currencySymbol: '₺',
+        ),
+        ProductDetails(
+          id: 'com.hisle.app.credits.50',
+          title: '50 Kredi (Android test modu)',
+          description: 'Butona bastığında hesabına 50 kredi eklenir.',
+          price: 'Test ekle',
+          rawPrice: 0,
+          currencyCode: 'TRY',
+          currencySymbol: '₺',
+        ),
+      ];
 }

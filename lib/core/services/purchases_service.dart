@@ -11,6 +11,8 @@ class PurchasesService {
   final InAppPurchase _inAppPurchase;
   StreamSubscription<List<PurchaseDetails>>? _subscription;
 
+  bool get useAndroidPurchaseSimulation => Env.useAndroidPurchaseSimulation;
+
   Future<bool> isAvailable() => _inAppPurchase.isAvailable();
 
   Future<List<ProductDetails>> getProducts() async {
