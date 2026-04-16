@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "310514488602",
+    "firebase_url": "https://nar-rehberi-default-rtdb.firebaseio.com",
+    "project_id": "nar-rehberi",
+    "storage_bucket": "nar-rehberi.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:310514488602:android:2485248a4e7223949a88a3",
+        "android_client_info": {
+          "package_name": "com.hisle.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "310514488602-9fkq4mk55pcme1addu97arvftudtrskv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC5acc2-V7kTa3eA3ehMeSVYpoSqdYvSOc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "310514488602-9fkq4mk55pcme1addu97arvftudtrskv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

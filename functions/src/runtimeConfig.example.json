@@ -1,0 +1,13 @@
+{
+  "starterCredits": 3,
+  "freeDailyCredits": 2,
+  "linkBonusCredits": 3,
+  "replyGenerationCost": 1,
+  "messageAnalysisCost": 1,
+  "situationStrategyCost": 2,
+  "guestDailyLimit": 3,
+  "linkedDailyLimit": 10,
+  "aiCooldownSeconds": 20,
+  "latestPromptVersion": "v1",
+  "softPaywallThreshold": 2
+}

@@ -1,0 +1,53 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function owns(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    match /users/{userId} {
+      allow read: if owns(userId);
+      allow create: if owns(userId);
+      allow update: if owns(userId)
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.creditBalance == resource.data.creditBalance
+        && request.resource.data.planType == resource.data.planType
+        && request.resource.data.subscriptionStatus == resource.data.subscriptionStatus;
+      allow delete: if false;
+    }
+
+    match /analyses/{analysisId} {
+      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+
+    match /credit_transactions/{transactionId} {
+      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /subscriptions/{subscriptionId} {
+      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /feedback/{feedbackId} {
+      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /app_config/{docId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    match /prompts/{promptId} {
+      allow read, write: if false;
+    }
+  }
+}
