@@ -8,6 +8,7 @@ import 'package:iliski_kocu_ai/features/history/presentation/history_screen.dart
 import 'package:iliski_kocu_ai/features/home/presentation/home_screen.dart';
 import 'package:iliski_kocu_ai/features/onboarding/presentation/onboarding_screen.dart';
 import 'package:iliski_kocu_ai/features/premium/presentation/premium_screen.dart';
+import 'package:iliski_kocu_ai/features/profile/presentation/help_center_screen.dart';
 import 'package:iliski_kocu_ai/features/profile/presentation/privacy_policy_screen.dart';
 import 'package:iliski_kocu_ai/features/profile/presentation/profile_screen.dart';
 import 'package:iliski_kocu_ai/features/profile/presentation/terms_screen.dart';
@@ -32,6 +33,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/link-account', builder: (_, __) => const AccountLinkingScreen()),
       GoRoute(path: '/premium', builder: (_, __) => const PremiumScreen()),
       GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
+      GoRoute(path: '/help', builder: (_, __) => const HelpCenterScreen()),
       GoRoute(path: '/privacy', builder: (_, __) => const PrivacyPolicyScreen()),
       GoRoute(path: '/terms', builder: (_, __) => const TermsScreen()),
     ],

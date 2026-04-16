@@ -5,9 +5,9 @@ class Env {
   );
 
   static const premiumProductIds = <String>[
-    'premium_monthly',
-    'premium_yearly',
-    'credits_10',
-    'credits_50',
+    'com.hisle.app.premium.monthly',
+    'com.hisle.app.premium.yearly',
+    'com.hisle.app.credits.10',
+    'com.hisle.app.credits.50',
   ];
 }

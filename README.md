@@ -24,8 +24,7 @@ npm run build
 
 ## Kullanıcı tarafından sonra doldurulacaklar
 
-- Firebase platform config dosyaları
-- `lib/firebase_options.dart` gerçek değerleri
-- RevenueCat anahtarları ve ürün kimlikleri
-- `OPENAI_API_KEY` Functions secret
-- Store metinleri ve nihai hukuk içerikleri
+- Mağaza ürünlerinin App Store Connect ve Google Play tarafında oluşturulması
+- GitHub signing / deploy secret'larının eklenmesi
+- `OPENAI_API_KEY` deploy ortamı secret'ı
+- Netlify alan adı veya canlı hukuk merkezi bağlantısı

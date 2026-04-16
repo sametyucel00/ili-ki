@@ -2,6 +2,11 @@ name: Android Release Build
 
 on:
   workflow_dispatch:
+    inputs:
+      upload_to_play:
+        description: "Upload the built app bundle to Play internal track"
+        required: false
+        default: "false"
   push:
     tags:
       - "android-v*"
@@ -61,3 +66,13 @@ jobs:
         with:
           name: android-aab
           path: build/app/outputs/bundle/release/app-release.aab
+
+      - name: Upload to Google Play internal
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.upload_to_play == 'true'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.hisle.app
+          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          track: internal
+          status: completed

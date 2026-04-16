@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iliski_kocu_ai/core/constants/app_links.dart';
 import 'package:iliski_kocu_ai/core/constants/app_strings.dart';
 import 'package:iliski_kocu_ai/core/services/providers.dart';
+import 'package:iliski_kocu_ai/core/utils/link_launcher.dart';
 import 'package:iliski_kocu_ai/features/auth/presentation/auth_controller.dart';
 import 'package:iliski_kocu_ai/shared/widgets/common_widgets.dart';
 
@@ -41,6 +43,14 @@ class ProfileScreen extends ConsumerWidget {
           ListTile(
             tileColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text('Yardım Merkezi'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => context.push('/help'),
+          ),
+          const SizedBox(height: 10),
+          ListTile(
+            tileColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             title: const Text('Kullanım Koşulları'),
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () => context.push('/terms'),
@@ -63,10 +73,14 @@ class ProfileScreen extends ConsumerWidget {
                 SizedBox(height: 12),
                 Text(AppStrings.disclaimer),
                 SizedBox(height: 8),
-                Text('Gizlilik Politikası: Uygulama içinde ayrı webview/screen ile yayınlanmalıdır.'),
-                Text('Kullanım Koşulları: Mağaza uyumlu açık fiyatlandırma ve iptal bilgisi içermelidir.'),
+                Text('Gizlilik, kullanım koşulları, satın alma ve veri silme detayları uygulama içindeki ekranlardan ve web hukuk merkezinden erişilebilir.'),
               ],
             ),
+          ),
+          const SizedBox(height: 10),
+          OutlinedButton(
+            onPressed: () => openExternalLink(AppLinks.helpUrl),
+            child: const Text('Web yardım merkezini aç'),
           ),
           const SizedBox(height: 16),
           OutlinedButton(

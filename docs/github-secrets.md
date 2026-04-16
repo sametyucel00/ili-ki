@@ -25,6 +25,13 @@ Bu repo için GitHub Actions tarafında eklemen gereken secret'lar:
 - `APP_STORE_CONNECT_KEY_ID`
 - `APP_STORE_CONNECT_PRIVATE_KEY`
 
+## Play / Netlify / Firebase publish
+
+- `PLAY_SERVICE_ACCOUNT_JSON`
+- `NETLIFY_AUTH_TOKEN`
+- `NETLIFY_SITE_ID`
+- `FIREBASE_TOKEN`
+
 ## Backend / deploy related
 
 - `OPENAI_API_KEY`
