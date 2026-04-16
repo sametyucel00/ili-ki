@@ -44,6 +44,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -53,7 +55,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             children: [
               Text(
                 AppStrings.appName,
-                style: Theme.of(context).textTheme.titleLarge,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 24),
               Expanded(
@@ -79,20 +84,28 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         children: [
                           Text(
                             item.step,
-                            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                                  color: const Color(0xFFBA786D),
-                                  fontWeight: FontWeight.w700,
-                                ),
+                            style: theme.textTheme.displaySmall?.copyWith(
+                              color: const Color(0xFF9F5F56),
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                           const SizedBox(height: 28),
                           Text(
                             item.title,
-                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(height: 1.1),
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                              height: 1.08,
+                              color: const Color(0xFF2F2324),
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                           const SizedBox(height: 18),
                           Text(
                             item.description,
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.55),
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              height: 1.58,
+                              color: const Color(0xFF4D3A3D),
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                           const Spacer(),
                         ],
@@ -129,9 +142,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 child: const Text('Hemen Dene'),
               ),
               const SizedBox(height: 12),
-              const Text(
-                'Hesabını daha sonra bağlayabilirsin.',
-                textAlign: TextAlign.center,
+              Center(
+                child: Text(
+                  'Hesabını daha sonra bağlayabilirsin.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.78),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
             ],
           ),
