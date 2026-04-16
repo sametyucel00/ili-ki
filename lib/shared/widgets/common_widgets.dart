@@ -19,13 +19,16 @@ class AppScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title), actions: actions),
-      floatingActionButton: floatingActionButton,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: child,
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        appBar: AppBar(title: Text(title), actions: actions),
+        floatingActionButton: floatingActionButton,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: child,
+          ),
         ),
       ),
     );
@@ -40,7 +43,10 @@ class PrimaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Padding(padding: const EdgeInsets.all(18), child: child),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: child,
+      ),
     );
   }
 }
@@ -107,18 +113,20 @@ class ErrorStateView extends StatelessWidget {
   const ErrorStateView({
     required this.message,
     required this.onRetry,
+    this.title = 'Bir sorun oluştu',
     super.key,
   });
 
+  final String title;
   final String message;
   final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
     return EmptyStateView(
-      title: 'Bir şey ters gitti',
+      title: title,
       description: message,
-      buttonText: 'Tekrar Dene',
+      buttonText: 'Tekrar dene',
       onPressed: onRetry,
     );
   }
@@ -188,6 +196,51 @@ class InfoBanner extends StatelessWidget {
             TextButton(onPressed: onAction, child: Text(actionLabel!)),
         ],
       ),
+    );
+  }
+}
+
+class SelectionChipGroup extends StatelessWidget {
+  const SelectionChipGroup({
+    required this.label,
+    required this.value,
+    required this.options,
+    required this.onChanged,
+    this.helperText,
+    super.key,
+  });
+
+  final String label;
+  final String value;
+  final List<String> options;
+  final ValueChanged<String> onChanged;
+  final String? helperText;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: Theme.of(context).textTheme.titleSmall),
+        if (helperText != null) ...[
+          const SizedBox(height: 6),
+          Text(helperText!, style: Theme.of(context).textTheme.bodySmall),
+        ],
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: options
+              .map(
+                (option) => ChoiceChip(
+                  label: Text(option),
+                  selected: option == value,
+                  onSelected: (_) => onChanged(option),
+                ),
+              )
+              .toList(),
+        ),
+      ],
     );
   }
 }

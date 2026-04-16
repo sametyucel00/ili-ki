@@ -31,8 +31,8 @@ class _RewardedCreditSheetState extends ConsumerState<RewardedCreditSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SectionHeader(
-            'Kredin bitti',
-            subtitle: 'İstersen reklam izle, istersen premium veya kredi paketlerine geç.',
+            'Kredi kazan',
+            subtitle: 'İstersen reklam izle ya da premium ve kredi paketlerine geç.',
           ),
           const SizedBox(height: 16),
           const PrimaryCard(
@@ -41,7 +41,7 @@ class _RewardedCreditSheetState extends ConsumerState<RewardedCreditSheet> {
               children: [
                 Text('1 reklam izle → 1 analiz kazan'),
                 SizedBox(height: 8),
-                Text('Reklam izlemek tamamen isteğe bağlıdır. Ödül kazanırsan kredi hesabına işlenir.'),
+                Text('Reklam izlemek tamamen isteğe bağlıdır. Ödül kazanınca kredi hesabına işlenir.'),
               ],
             ),
           ),
@@ -81,7 +81,7 @@ class _RewardedCreditSheetState extends ConsumerState<RewardedCreditSheet> {
               Navigator.of(context).pop();
               context.push('/premium');
             },
-            child: const Text('Kredi / Premium Seçeneklerini Gör'),
+            child: const Text('Kredi ve premium seçeneklerini gör'),
           ),
           if (user?.isGuest == true) ...[
             const SizedBox(height: 10),

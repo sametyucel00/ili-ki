@@ -33,20 +33,23 @@ class _StrategyScreenState extends ConsumerState<StrategyScreen> {
       title: 'Durumu Anlat',
       child: ListView(
         children: [
-          const SectionHeader('İletişim dinamiğini gör', subtitle: 'Sakin, manipülatif olmayan ve pratik öneriler al.'),
+          const SectionHeader(
+            'İletişim dinamiğini toparla',
+            subtitle: 'Uzun anlatımı özetleyen ve bir sonraki adıma odaklanan yorumlar al.',
+          ),
           const SizedBox(height: 16),
           TextField(
             controller: situationController,
             maxLines: 9,
             decoration: const InputDecoration(hintText: 'Durumu detaylı anlat'),
           ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            initialValue: relationshipType,
-            items: const ['Belirsiz', 'Flört', 'İlişki', 'Eski partner', 'Arkadaşlık']
-                .map((item) => DropdownMenuItem(value: item, child: Text(item)))
-                .toList(),
-            onChanged: (value) => setState(() => relationshipType = value ?? relationshipType),
+          const SizedBox(height: 16),
+          SelectionChipGroup(
+            label: 'İlişki türü',
+            helperText: 'Öneriler, seçtiğin ilişki çerçevesine göre dengelenir.',
+            value: relationshipType,
+            options: const ['Belirsiz', 'Flört', 'İlişki', 'Eski partner', 'Arkadaşlık'],
+            onChanged: (value) => setState(() => relationshipType = value),
           ),
           const SizedBox(height: 18),
           ElevatedButton(
@@ -63,8 +66,8 @@ class _StrategyScreenState extends ConsumerState<StrategyScreen> {
           if (state.hasError)
             isInsufficientCreditsError(state.error!)
                 ? EmptyStateView(
-                    title: 'Kredin bitti',
-                    description: 'İstersen reklam izle ve 1 analiz hakkı kazan. İstersen premium seçeneklerine geç.',
+                    title: 'Kredi yetersiz',
+                    description: 'Reklam izleyerek kredi kazanabilir ya da premium seçeneklerine geçebilirsin.',
                     buttonText: 'Seçenekleri Aç',
                     onPressed: () => showModalBottomSheet<void>(
                       context: context,

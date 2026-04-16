@@ -1,4 +1,4 @@
-# İlişki Koçu AI
+# Hisle
 
 Flutter + Firebase tabanlı, guest-first ilişki iletişimi yardımcı uygulaması.
 

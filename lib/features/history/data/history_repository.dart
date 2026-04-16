@@ -20,18 +20,21 @@ class HistoryRepository {
       return cached.map(AnalysisRecord.fromMap).toList();
     }
 
-    Query<Map<String, dynamic>> query = _firestore
-        .collection('analyses')
-        .where('uid', isEqualTo: uid)
-        .orderBy('createdAt', descending: true);
-    if (favoritesOnly) {
-      query = query.where('isFavorite', isEqualTo: true);
-    }
-    final snapshot = await query.get();
-    if (snapshot.docs.isEmpty) {
+    try {
+      Query<Map<String, dynamic>> query = _firestore.collection('analyses').where('uid', isEqualTo: uid);
+      if (favoritesOnly) {
+        query = query.where('isFavorite', isEqualTo: true);
+      }
+      query = query.orderBy('createdAt', descending: true);
+      final snapshot = await query.get();
+      if (snapshot.docs.isEmpty) {
+        final cached = await _cache.readCachedAnalyses();
+        return cached.map(AnalysisRecord.fromMap).toList();
+      }
+      return snapshot.docs.map((doc) => AnalysisRecord.fromMap(doc.data())).toList();
+    } catch (_) {
       final cached = await _cache.readCachedAnalyses();
       return cached.map(AnalysisRecord.fromMap).toList();
     }
-    return snapshot.docs.map((doc) => AnalysisRecord.fromMap(doc.data())).toList();
   }
 }

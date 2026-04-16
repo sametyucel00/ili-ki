@@ -17,241 +17,123 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   final items = const [
     _OnboardingItem(
-      title: 'Mesajları çözümle',
-      description: 'Gelen mesajların olası anlamını kesinlik iddia etmeden, sakin ve dengeli şekilde yorumla.',
-      eyebrow: 'Mesaj Analizi',
-      metric: '3 yapılandırılmış cevap önerisi',
+      step: '01',
+      title: 'Mesajları daha net gör',
+      description:
+          'Gelen mesajın tonu, açıklığı ve olası anlamı daha düzenli bir çerçevede önüne gelir. Uygulama kesin hüküm vermez, sana daha sakin düşünme alanı açar.',
     ),
     _OnboardingItem(
-      title: 'Doğal cevap yazdır',
-      description: 'Tatlı, cool, net ya da mesafeli tonda; kullanıma hazır Türkçe cevaplar üret.',
-      eyebrow: 'Cevap Yazdır',
-      metric: 'Tona göre uyarlanmış 3 alternatif',
+      step: '02',
+      title: 'Cevap seçeneklerini hızlıca hazırla',
+      description:
+          'Tatlı, net, mesafeli ya da daha yumuşak bir ton seçip kullanıma hazır Türkçe cevaplar alabilirsin.',
     ),
     _OnboardingItem(
-      title: 'Durumu stratejik gör',
-      description: 'İletişim dinamiğini, kaçınılması gerekenleri ve bir sonraki mantıklı adımı birlikte netleştir.',
-      eyebrow: 'Durum Stratejisi',
-      metric: 'Özet + risk notu + 3 sonraki adım',
+      step: '03',
+      title: 'Durumu tek yerden toparla',
+      description:
+          'Uzun uzun düşünmek yerine yaşanan iletişimi özetleyip bir sonraki adım için daha dengeli öneriler görebilirsin.',
     ),
     _OnboardingItem(
-      title: 'Önce dene, sonra bağla',
-      description: 'İlk açılışta giriş gerekmez. Analizlerini yaşa, sonra istersen hesabını bağla.',
-      eyebrow: 'Guest-First',
-      metric: 'Anonim başlangıç + sonradan bağlama',
+      step: '04',
+      title: 'Önce dene, hesabını sonra bağla',
+      description:
+          'İlk açılışta giriş zorunlu değildir. Uygulamayı deneyebilir, istersen daha sonra hesabını bağlayıp geçmişini koruyabilirsin.',
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFFFF8F3), Color(0xFFF2E4DC)],
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'İlişki Koçu AI',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: const Color(0xFF6B5B58),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                AppStrings.appName,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 24),
+              Expanded(
+                child: PageView.builder(
+                  controller: controller,
+                  itemCount: items.length,
+                  onPageChanged: (value) => setState(() => page = value),
+                  itemBuilder: (context, index) {
+                    final item = items[index];
+                    return Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(24, 28, 24, 28),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0xFFFFF8F3), Color(0xFFF3E6DF)],
                         ),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Expanded(
-                  child: PageView.builder(
-                    controller: controller,
-                    itemCount: items.length,
-                    onPageChanged: (value) => setState(() => page = value),
-                    itemBuilder: (context, index) {
-                      final item = items[index];
-                      return Column(
+                        borderRadius: BorderRadius.circular(32),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            flex: 6,
-                            child: Container(
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(36),
-                                gradient: const LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [Color(0xFFF6DDD3), Color(0xFFC78E84)],
+                          Text(
+                            item.step,
+                            style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                                  color: const Color(0xFFBA786D),
+                                  fontWeight: FontWeight.w700,
                                 ),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Color(0x1A6F4A45),
-                                    blurRadius: 30,
-                                    offset: Offset(0, 18),
-                                  ),
-                                ],
-                              ),
-                              child: Stack(
-                                children: [
-                                  Positioned(
-                                    right: -30,
-                                    top: 28,
-                                    child: Container(
-                                      width: 170,
-                                      height: 170,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withValues(alpha: 0.14),
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                  ),
-                                  Positioned(
-                                    left: -18,
-                                    bottom: -18,
-                                    child: Container(
-                                      width: 140,
-                                      height: 140,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withValues(alpha: 0.1),
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(28),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withValues(alpha: 0.2),
-                                            borderRadius: BorderRadius.circular(999),
-                                          ),
-                                          child: Text(
-                                            item.eyebrow,
-                                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                                  color: const Color(0xFF4B3432),
-                                                ),
-                                          ),
-                                        ),
-                                        const Spacer(),
-                                        Center(
-                                          child: Container(
-                                            width: 220,
-                                            height: 220,
-                                            decoration: BoxDecoration(
-                                              color: Colors.white.withValues(alpha: 0.25),
-                                              borderRadius: BorderRadius.circular(52),
-                                            ),
-                                            padding: const EdgeInsets.all(20),
-                                            child: ClipRRect(
-                                              borderRadius: BorderRadius.circular(34),
-                                              child: Image.asset('assets/branding/app-icon-master.png'),
-                                            ),
-                                          ),
-                                        ),
-                                        const Spacer(),
-                                        Text(
-                                          item.metric,
-                                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                                color: const Color(0xFF5B4441),
-                                              ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                          ),
+                          const SizedBox(height: 28),
+                          Text(
+                            item.title,
+                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(height: 1.1),
                           ),
                           const SizedBox(height: 18),
-                          Expanded(
-                            flex: 4,
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(24),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.84),
-                                borderRadius: BorderRadius.circular(28),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item.title,
-                                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                          fontSize: 30,
-                                          color: const Color(0xFF352624),
-                                        ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    item.description,
-                                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                          color: const Color(0xFF6B5B58),
-                                        ),
-                                  ),
-                                  const Spacer(),
-                                  const Wrap(
-                                    spacing: 10,
-                                    runSpacing: 10,
-                                    children: [
-                                      _InfoChip(label: 'Belirsizliği azaltır'),
-                                      _InfoChip(label: 'Sakin ton'),
-                                      _InfoChip(label: 'Zorunlu giriş yok'),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
+                          Text(
+                            item.description,
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.55),
                           ),
+                          const Spacer(),
                         ],
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    items.length,
-                    (index) => AnimatedContainer(
-                      duration: const Duration(milliseconds: 220),
-                      width: page == index ? 28 : 10,
-                      height: 10,
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: BoxDecoration(
-                        color: page == index
-                            ? const Color(0xFFB56A63)
-                            : const Color(0xFFD6C2BB),
-                        borderRadius: BorderRadius.circular(999),
                       ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  items.length,
+                  (index) => AnimatedContainer(
+                    duration: const Duration(milliseconds: 220),
+                    width: page == index ? 28 : 10,
+                    height: 10,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: page == index ? const Color(0xFFB56A63) : const Color(0xFFD6C2BB),
+                      borderRadius: BorderRadius.circular(999),
                     ),
                   ),
                 ),
-                const SizedBox(height: 18),
-                ElevatedButton(
-                  onPressed: () async {
-                    await ref.read(authControllerProvider.notifier).completeOnboarding();
-                    if (context.mounted) {
-                      context.go('/home');
-                    }
-                  },
-                  child: const Text('Hemen Dene'),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  '${AppStrings.disclaimer}\nHesabını daha sonra bağlayabilirsin.',
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () async {
+                  await ref.read(authControllerProvider.notifier).completeOnboarding();
+                  if (context.mounted) {
+                    context.go('/home');
+                  }
+                },
+                child: const Text('Hemen Dene'),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Hesabını daha sonra bağlayabilirsin.',
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         ),
       ),
@@ -261,37 +143,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
 class _OnboardingItem {
   const _OnboardingItem({
+    required this.step,
     required this.title,
     required this.description,
-    required this.eyebrow,
-    required this.metric,
   });
 
+  final String step;
   final String title;
   final String description;
-  final String eyebrow;
-  final String metric;
-}
-
-class _InfoChip extends StatelessWidget {
-  const _InfoChip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF4ECE6),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: const Color(0xFF6B5B58),
-            ),
-      ),
-    );
-  }
 }

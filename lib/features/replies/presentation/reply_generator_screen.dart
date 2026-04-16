@@ -33,7 +33,10 @@ class _ReplyGeneratorScreenState extends ConsumerState<ReplyGeneratorScreen> {
       title: 'Cevap Yazdır',
       child: ListView(
         children: [
-          const SectionHeader('Doğal cevap üret', subtitle: 'Türkçe, kullanıma hazır ve role uygun 3 seçenek üretir.'),
+          const SectionHeader(
+            'Doğal cevap üret',
+            subtitle: 'Türkçe, kullanıma hazır ve role uygun üç seçenek oluştur.',
+          ),
           const SizedBox(height: 16),
           TextField(
             controller: messageController,
@@ -46,22 +49,26 @@ class _ReplyGeneratorScreenState extends ConsumerState<ReplyGeneratorScreen> {
             maxLines: 3,
             decoration: const InputDecoration(hintText: 'Opsiyonel bağlam'),
           ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            initialValue: tone,
-            items: const ['Tatlı', 'Cool', 'Net', 'Mesafeli', 'Flörtöz', 'Kibar', 'Sert ama saygılı', 'Kapanış odaklı']
-                .map((item) => DropdownMenuItem(value: item, child: Text(item)))
-                .toList(),
-            onChanged: (value) => setState(() => tone = value ?? tone),
+          const SizedBox(height: 8),
+          Text(
+            'Opsiyonel bağlam; konuşmanın nerede takıldığını veya bu mesajın hangi durumda geldiğini anlatan kısa nottur.',
+            style: Theme.of(context).textTheme.bodySmall,
           ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            initialValue: responseLength,
-            items: const ['Kısa', 'Orta', 'Uzun']
-                .map((item) => DropdownMenuItem(value: item, child: Text(item)))
-                .toList(),
-            onChanged: (value) => setState(() => responseLength = value ?? responseLength),
+          const SizedBox(height: 16),
+          SelectionChipGroup(
+            label: 'Ton',
+            value: tone,
+            options: const ['Tatlı', 'Cool', 'Net', 'Mesafeli', 'Flörtöz', 'Kibar', 'Sert ama saygılı', 'Kapanış odaklı'],
+            onChanged: (value) => setState(() => tone = value),
           ),
+          const SizedBox(height: 16),
+          SelectionChipGroup(
+            label: 'Uzunluk',
+            value: responseLength,
+            options: const ['Kısa', 'Orta', 'Uzun'],
+            onChanged: (value) => setState(() => responseLength = value),
+          ),
+          const SizedBox(height: 8),
           SwitchListTile(
             value: emojiPreference,
             onChanged: (value) => setState(() => emojiPreference = value),
@@ -84,8 +91,8 @@ class _ReplyGeneratorScreenState extends ConsumerState<ReplyGeneratorScreen> {
           if (state.hasError)
             isInsufficientCreditsError(state.error!)
                 ? EmptyStateView(
-                    title: 'Kredin bitti',
-                    description: 'İstersen reklam izle ve 1 analiz hakkı kazan. Ya da kredi/premium seçeneklerine bak.',
+                    title: 'Kredi yetersiz',
+                    description: 'Reklam izleyerek kredi kazanabilir ya da premium seçeneklerine geçebilirsin.',
                     buttonText: 'Seçenekleri Aç',
                     onPressed: () => showModalBottomSheet<void>(
                       context: context,

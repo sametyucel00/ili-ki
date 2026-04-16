@@ -151,4 +151,14 @@ class AuthRepository {
     await _cache.clearAll();
     await _auth.signOut();
   }
+
+  Future<void> updateDisplayName(String displayName) async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) {
+      throw const AppException('Aktif oturum bulunamadı.', code: 'missing_session');
+    }
+    await _firestore.collection('users').doc(uid).update({
+      'displayName': displayName.trim(),
+    });
+  }
 }

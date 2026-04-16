@@ -18,7 +18,7 @@ class HelpCenterScreen extends StatelessWidget {
               children: [
                 SectionHeader('Sık sorulanlar'),
                 SizedBox(height: 12),
-                Text('• Uygulama terapi veya profesyonel danışmanlık yerine geçmez.'),
+                Text('• Hisle terapi veya profesyonel danışmanlık yerine geçmez.'),
                 Text('• Analizler yorumlayıcıdır; kesinlik iddia etmez.'),
                 Text('• Kredi, reklam ödülü ve satın alma hakları hesap durumuna göre değişebilir.'),
                 Text('• Hesabını bağlarsan geçmişin ve satın alma geri yükleme hakların korunur.'),

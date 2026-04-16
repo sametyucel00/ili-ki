@@ -39,7 +39,7 @@ class _AccountLinkingScreenState extends ConsumerState<AccountLinkingScreen> {
                 SizedBox(height: 12),
                 Text('• Geçmişin güvende kalır'),
                 Text('• Cihazlar arasında senkron açılır'),
-                Text('• Satın almaları geri yükleyebilirsin'),
+                Text('• Satın alımları geri yükleyebilirsin'),
                 Text('• Bonus kredi kazanırsın'),
               ],
             ),

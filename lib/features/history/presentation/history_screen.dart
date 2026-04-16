@@ -51,15 +51,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                     Text('Hesabını bağla, analizlerin kaybolmasın.', style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 8),
                     OutlinedButton(
-                      onPressed: () async {
-                        await ref.read(analyticsServiceProvider).logEvent(
-                          'account_link_prompt_shown',
-                          {'source': 'history'},
-                        );
-                        if (context.mounted) {
-                          context.push('/link-account');
-                        }
-                      },
+                      onPressed: () => context.push('/link-account'),
                       child: const Text('Hesap Bağla'),
                     ),
                   ],
@@ -72,7 +64,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 if (items.isEmpty) {
                   return EmptyStateView(
                     title: 'Henüz kayıt yok',
-                    description: 'İlk analizi yapınca burada göreceksin.',
+                    description: 'İlk analizi yaptığında burada göreceksin.',
                     buttonText: 'Analize Git',
                     onPressed: () => context.push('/analysis'),
                   );
@@ -85,6 +77,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               },
               loading: () => const LoadingList(),
               error: (error, _) => ErrorStateView(
+                title: 'Geçmiş yüklenemedi',
                 message: toUserFacingError(error),
                 onRetry: () => ref.invalidate(historyProvider(favoritesOnly)),
               ),

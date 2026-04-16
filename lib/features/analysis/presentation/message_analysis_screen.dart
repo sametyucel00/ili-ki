@@ -36,7 +36,7 @@ class _MessageAnalysisScreenState extends ConsumerState<MessageAnalysisScreen> {
         children: [
           const SectionHeader(
             'Mesajı yükle',
-            subtitle: 'Belirsizliği azaltan, kesinlik iddia etmeyen dengeli yorumlar al.',
+            subtitle: 'Mesajı daha sakin ve daha net değerlendirmek için buraya ekle.',
           ),
           const SizedBox(height: 16),
           TextField(
@@ -44,25 +44,24 @@ class _MessageAnalysisScreenState extends ConsumerState<MessageAnalysisScreen> {
             maxLines: 6,
             decoration: const InputDecoration(hintText: 'Gelen mesajı buraya yapıştır'),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           TextField(
             controller: contextController,
             maxLines: 3,
             decoration: const InputDecoration(hintText: 'Opsiyonel bağlam'),
           ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            initialValue: relationshipType,
-            items: const [
-              'Belirsiz',
-              'Flört',
-              'İlişki',
-              'Eski partner',
-              'Arkadaşlık',
-            ]
-                .map((item) => DropdownMenuItem(value: item, child: Text(item)))
-                .toList(),
-            onChanged: (value) => setState(() => relationshipType = value ?? 'Belirsiz'),
+          const SizedBox(height: 8),
+          Text(
+            'Opsiyonel bağlam; bu mesajdan hemen önce ne konuşulduğu, aranızdaki durum veya son gelişme gibi ek bilgidir.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 16),
+          SelectionChipGroup(
+            label: 'İlişki türü',
+            helperText: 'Bu seçim yorumun tonunu ve öneri dilini şekillendirir.',
+            value: relationshipType,
+            options: const ['Belirsiz', 'Flört', 'İlişki', 'Eski partner', 'Arkadaşlık'],
+            onChanged: (value) => setState(() => relationshipType = value),
           ),
           const SizedBox(height: 20),
           ElevatedButton(
@@ -80,8 +79,8 @@ class _MessageAnalysisScreenState extends ConsumerState<MessageAnalysisScreen> {
           if (state.hasError)
             isInsufficientCreditsError(state.error!)
                 ? EmptyStateView(
-                    title: 'Kredin bitti',
-                    description: 'İstersen reklam izle ve 1 analiz hakkı kazan. İstersen premium seçeneklerine geç.',
+                    title: 'Kredi yetersiz',
+                    description: 'Reklam izleyerek kredi kazanabilir ya da premium seçeneklerine geçebilirsin.',
                     buttonText: 'Seçenekleri Aç',
                     onPressed: () => showModalBottomSheet<void>(
                       context: context,
