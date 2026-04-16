@@ -11,10 +11,10 @@ class RewardedAdService {
 
   String get _adUnitId {
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/5224354917';
+      return 'ca-app-pub-7422131853794926/8791858882';
     }
     if (Platform.isIOS) {
-      return 'ca-app-pub-3940256099942544/1712485313';
+      return 'ca-app-pub-7422131853794926/5389789590';
     }
     return '';
   }
