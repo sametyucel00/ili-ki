@@ -121,26 +121,36 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import os
+          import re
 
           path = Path("ios/Runner.xcodeproj/project.pbxproj")
           text = path.read_text()
 
-          bundle_id = os.environ["IOS_BUNDLE_ID"]
-          team_id = os.environ["APPLE_TEAM_ID"]
-          profile_name = os.environ["IOS_PROFILE_NAME"]
+          bundle_id = os.environ["IOS_BUNDLE_ID"].strip()
+          team_id = os.environ["APPLE_TEAM_ID"].strip()
+          profile_name = os.environ["IOS_PROFILE_NAME"].strip()
 
-          target = f'PRODUCT_BUNDLE_IDENTIFIER = {bundle_id};'
-          replacement = (
-              f'DEVELOPMENT_TEAM = {team_id};\n'
-              f'\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = {bundle_id};\n'
-              f'\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "{profile_name}";\n'
-              f'\t\t\t\tCODE_SIGN_STYLE = Manual;'
+          pattern = re.compile(
+              r'(PRODUCT_BUNDLE_IDENTIFIER = )([^;]+);'
+              r'(?:(?!CODE_SIGN_ENTITLEMENTS|SWIFT_VERSION).)*?'
+              r'(SWIFT_VERSION = 5\.0;)',
+              re.DOTALL,
           )
 
-          if target not in text:
-              raise SystemExit("Could not find Runner bundle identifier in project.pbxproj")
+          matches = list(pattern.finditer(text))
+          if not matches:
+              raise SystemExit("Could not find Runner build configuration blocks in project.pbxproj")
 
-          text = text.replace(target, replacement)
+          def repl(match):
+              return (
+                  f'{match.group(1)}{bundle_id};\n'
+                  f'\t\t\t\tDEVELOPMENT_TEAM = {team_id};\n'
+                  f'\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "{profile_name}";\n'
+                  f'\t\t\t\tCODE_SIGN_STYLE = Manual;\n'
+                  f'\t\t\t\t{match.group(3)}'
+              )
+
+          text = pattern.sub(repl, text, count=3)
           path.write_text(text)
           PY
 
