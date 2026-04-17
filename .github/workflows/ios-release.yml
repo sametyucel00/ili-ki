@@ -42,6 +42,16 @@ jobs:
           security import $CERT_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
           security list-keychain -d user -s $KEYCHAIN_PATH
 
+      - name: Debug signing certificate
+        env:
+          KEYCHAIN_PASSWORD: ${{ secrets.IOS_KEYCHAIN_PASSWORD }}
+        run: |
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          echo "Certificate file exists:"
+          ls -lh $RUNNER_TEMP/build_certificate.p12
+          echo "Available signing identities:"
+          security find-identity -v -p codesigning $KEYCHAIN_PATH || true
+
       - name: Install provisioning profile
         env:
           BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
@@ -50,6 +60,27 @@ jobs:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode --output $PP_PATH
           cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
+
+      - name: Debug provisioning profile
+        env:
+          IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
+          IOS_PROFILE_NAME: ${{ secrets.IOS_PROFILE_NAME }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
+          DECODED_PLIST=$RUNNER_TEMP/profile.plist
+          echo "Provisioning profile file exists:"
+          ls -lh $PP_PATH
+          security cms -D -i $PP_PATH > $DECODED_PLIST
+          echo "Provisioning profile summary:"
+          /usr/libexec/PlistBuddy -c "Print :Name" $DECODED_PLIST || true
+          /usr/libexec/PlistBuddy -c "Print :TeamIdentifier:0" $DECODED_PLIST || true
+          /usr/libexec/PlistBuddy -c "Print :Entitlements:application-identifier" $DECODED_PLIST || true
+          /usr/libexec/PlistBuddy -c "Print :UUID" $DECODED_PLIST || true
+          /usr/libexec/PlistBuddy -c "Print :ExpirationDate" $DECODED_PLIST || true
+          echo "Expected profile name: $IOS_PROFILE_NAME"
+          echo "Expected team id: $APPLE_TEAM_ID"
+          echo "Expected bundle id: $IOS_BUNDLE_ID"
 
       - name: Create ExportOptions.plist
         env:
@@ -80,6 +111,16 @@ jobs:
           </dict>
           </plist>
           EOF
+
+      - name: Debug Xcode signing settings
+        env:
+          IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          echo "Runner build settings:"
+          xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -showBuildSettings | grep -E "PRODUCT_BUNDLE_IDENTIFIER|DEVELOPMENT_TEAM|CODE_SIGN_ENTITLEMENTS|PROVISIONING_PROFILE_SPECIFIER|CODE_SIGN_STYLE" || true
+          echo "Expected bundle id: $IOS_BUNDLE_ID"
+          echo "Expected team id: $APPLE_TEAM_ID"
 
       - name: Build IPA
         run: flutter build ipa --release --export-options-plist=ios/ExportOptions.plist --dart-define=AI_BACKEND_URL="${{ secrets.AI_BACKEND_URL }}"
