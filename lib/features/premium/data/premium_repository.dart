@@ -106,7 +106,7 @@ class PremiumRepository {
   }
 
   Future<void> grantRewardedCredit() async {
-    final current = await _cache.getLocalCreditBalance() ?? 1;
+    final current = await _cache.getLocalCreditBalance() ?? 5;
     await _cache.addLocalCredits(fallbackBalance: current, amount: 1);
     await _recordHistory(
       title: 'Reklam ödülü',
@@ -162,7 +162,7 @@ class PremiumRepository {
     if (amount == null) {
       return const PurchaseFeedback(message: 'Paket tanınmadı.');
     }
-    final currentCredits = await _cache.getLocalCreditBalance() ?? 1;
+    final currentCredits = await _cache.getLocalCreditBalance() ?? 5;
     await _cache.addLocalCredits(
         fallbackBalance: currentCredits, amount: amount);
     await _recordHistory(

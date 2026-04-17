@@ -23,4 +23,14 @@ class HistoryRepository {
     }
     return records.where((item) => item.isFavorite).toList();
   }
+
+  Future<void> deleteHistoryItem(String id) async {
+    final cached = await _cache.readCachedAnalyses();
+    await _cache
+        .writeCachedAnalyses(cached.where((item) => item['id'] != id).toList());
+  }
+
+  Future<void> clearAllHistory() async {
+    await _cache.clearCachedAnalyses();
+  }
 }

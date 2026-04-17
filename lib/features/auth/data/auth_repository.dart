@@ -39,7 +39,7 @@ class AuthRepository {
       linkedAt: null,
       language: 'tr',
       planType: 'free',
-      creditBalance: 1,
+      creditBalance: 5,
       isOnboarded: false,
       subscriptionStatus: 'inactive',
       subscriptionPlatform: null,
@@ -49,7 +49,7 @@ class AuthRepository {
     );
 
     await _cache.writeUserProfile(newUser.toMap());
-    await _cache.setLocalCreditBalance(1);
+    await _cache.setLocalCreditBalance(5);
     await _analytics.logEvent('local_session_created');
     return newUser;
   }

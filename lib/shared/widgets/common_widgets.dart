@@ -156,9 +156,14 @@ class LoadingList extends StatelessWidget {
 }
 
 class AnalysisListTile extends StatelessWidget {
-  const AnalysisListTile({required this.item, super.key});
+  const AnalysisListTile({
+    required this.item,
+    this.onDelete,
+    super.key,
+  });
 
   final AnalysisRecord item;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -173,9 +178,26 @@ class AnalysisListTile extends StatelessWidget {
       title: Text(title, maxLines: 2, overflow: TextOverflow.ellipsis),
       subtitle:
           Text(DateFormat('d MMM, HH:mm', 'tr_TR').format(item.createdAt)),
-      trailing: Icon(item.isFavorite
-          ? Icons.favorite_rounded
-          : Icons.chevron_right_rounded),
+      trailing: onDelete != null
+          ? PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'delete') {
+                  onDelete?.call();
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem<String>(
+                  value: 'delete',
+                  child: Text('Sil'),
+                ),
+              ],
+              icon: Icon(
+                item.isFavorite ? Icons.favorite_rounded : Icons.more_horiz_rounded,
+              ),
+            )
+          : Icon(item.isFavorite
+              ? Icons.favorite_rounded
+              : Icons.chevron_right_rounded),
       onTap: () => context.push('/detail/${item.id}'),
     );
   }

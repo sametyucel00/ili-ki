@@ -22,6 +22,72 @@ class HistoryScreen extends ConsumerStatefulWidget {
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   bool favoritesOnly = false;
 
+  Future<void> _deleteSingle(String id) async {
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Kaydı sil'),
+            content: const Text(
+              'Bu analiz geçmişten silinecek. Bu işlem geri alınamaz.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Vazgeç'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Sil'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (!confirmed) return;
+
+    await ref.read(historyRepositoryProvider).deleteHistoryItem(id);
+    ref.invalidate(historyProvider(favoritesOnly));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Geçmiş kaydı silindi.')),
+      );
+    }
+  }
+
+  Future<void> _clearAll() async {
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Tüm geçmişi sil'),
+            content: const Text(
+              'Tüm analiz geçmişi silinecek. Bu işlem geri alınamaz.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Vazgeç'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Tümünü sil'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (!confirmed) return;
+
+    await ref.read(historyRepositoryProvider).clearAllHistory();
+    ref.invalidate(historyProvider(favoritesOnly));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tüm analiz geçmişi silindi.')),
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -36,6 +102,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     return AppScaffold(
       title: 'Geçmiş',
       actions: [
+        IconButton(
+          tooltip: 'Tümünü sil',
+          onPressed: () => _clearAll(),
+          icon: const Icon(Icons.delete_sweep_rounded),
+        ),
         IconButton(
           onPressed: () => setState(() => favoritesOnly = !favoritesOnly),
           icon: Icon(favoritesOnly ? Icons.favorite : Icons.favorite_border),
@@ -54,8 +125,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           return ListView.separated(
             itemCount: items.length,
             separatorBuilder: (_, __) => const SizedBox(height: 10),
-            itemBuilder: (context, index) =>
-                AnalysisListTile(item: items[index]),
+            itemBuilder: (context, index) => AnalysisListTile(
+              item: items[index],
+              onDelete: () => _deleteSingle(items[index].id),
+            ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),

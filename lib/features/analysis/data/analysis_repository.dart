@@ -110,6 +110,10 @@ class AnalysisRepository {
         .writeCachedAnalyses(cached.where((item) => item['id'] != id).toList());
   }
 
+  Future<void> clearAllAnalyses() async {
+    await _cache.writeCachedAnalyses(const []);
+  }
+
   Future<int> getCompletedAnalysisCount() => _cache.getCompletedAnalysisCount();
 
   Future<AnalysisRecord> _buildLocalMessageAnalysis({
@@ -614,7 +618,7 @@ class AnalysisRepository {
   }
 
   Future<void> _consumeLocalCredits(int amount) async {
-    final current = await _cache.getLocalCreditBalance() ?? 1;
+    final current = await _cache.getLocalCreditBalance() ?? 5;
     if (current < amount) {
       throw const AppException('Insufficient credits.',
           code: 'insufficient_credits');

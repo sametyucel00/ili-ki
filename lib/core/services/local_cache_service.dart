@@ -27,6 +27,11 @@ class LocalCacheService {
     await prefs.setStringList(_historyKey, items.map(jsonEncode).toList());
   }
 
+  Future<void> clearCachedAnalyses() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_historyKey);
+  }
+
   Future<bool> isOnboardingSeen() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_onboardingKey) ?? false;

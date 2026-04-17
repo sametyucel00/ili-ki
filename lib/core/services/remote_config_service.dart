@@ -5,14 +5,14 @@ class RemoteConfigService {
 
   Future<AppConfigModel> initialize() async {
     return const AppConfigModel(
-      starterCredits: 1,
+      starterCredits: 5,
       freeDailyCredits: 2,
       linkBonusCredits: 0,
       replyGenerationCost: 1,
       messageAnalysisCost: 1,
       situationStrategyCost: 2,
-      guestDailyLimit: 3,
-      linkedDailyLimit: 10,
+      guestDailyLimit: 10,
+      linkedDailyLimit: 20,
       aiCooldownSeconds: 20,
       latestPromptVersion: 'local-v1',
       maintenanceMode: false,
