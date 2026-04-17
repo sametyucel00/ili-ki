@@ -41,7 +41,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1516),
+      backgroundColor: const Color(0xFFF8ECE7),
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -50,21 +50,28 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               width: 88,
               height: 88,
               decoration: BoxDecoration(
-                color: const Color(0xFF2A2022),
+                color: const Color(0xFFFFF8F5),
                 borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: const Color(0xFF4D363B)),
+                border: Border.all(color: const Color(0xFFE8C4BA)),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF8D4C45).withValues(alpha: 0.13),
+                    blurRadius: 28,
+                    offset: const Offset(0, 14),
+                  ),
+                ],
               ),
               child: const Icon(
                 Icons.favorite_border_rounded,
                 size: 36,
-                color: Color(0xFFF0B3AA),
+                color: Color(0xFF9E4F49),
               ),
             ),
             const SizedBox(height: 22),
             Text(
               AppStrings.appName,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: const Color(0xFFF6E8E2),
+                    color: const Color(0xFF2F2324),
                     fontWeight: FontWeight.w700,
                   ),
             ),
@@ -72,7 +79,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             Text(
               'İletişimi daha net gör',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: const Color(0xFFD8BBB4),
+                    color: const Color(0xFF7E5D5A),
                   ),
             ),
             const SizedBox(height: 24),
@@ -81,7 +88,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               height: 28,
               child: CircularProgressIndicator(
                 strokeWidth: 2.6,
-                color: Color(0xFFF0B3AA),
+                color: Color(0xFFB8615B),
               ),
             ),
           ],
