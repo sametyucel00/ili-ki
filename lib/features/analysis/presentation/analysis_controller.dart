@@ -3,7 +3,8 @@ import 'package:iliski_kocu_ai/core/services/providers.dart';
 import 'package:iliski_kocu_ai/shared/models/analysis_record.dart';
 
 final analysisActionProvider =
-    AsyncNotifierProvider<AnalysisActionController, AnalysisRecord?>(AnalysisActionController.new);
+    AsyncNotifierProvider<AnalysisActionController, AnalysisRecord?>(
+        AnalysisActionController.new);
 
 class AnalysisActionController extends AsyncNotifier<AnalysisRecord?> {
   @override

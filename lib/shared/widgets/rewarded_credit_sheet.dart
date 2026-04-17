@@ -9,7 +9,8 @@ class RewardedCreditSheet extends ConsumerStatefulWidget {
   const RewardedCreditSheet({super.key});
 
   @override
-  ConsumerState<RewardedCreditSheet> createState() => _RewardedCreditSheetState();
+  ConsumerState<RewardedCreditSheet> createState() =>
+      _RewardedCreditSheetState();
 }
 
 class _RewardedCreditSheetState extends ConsumerState<RewardedCreditSheet> {
@@ -34,7 +35,8 @@ class _RewardedCreditSheetState extends ConsumerState<RewardedCreditSheet> {
           children: [
             const SectionHeader(
               'Premium aktif',
-              subtitle: 'Premium kullanıcılar için reklam izleme seçeneği kapalıdır.',
+              subtitle:
+                  'Premium kullanıcılar için reklam izleme seçeneği kapalıdır.',
             ),
             const SizedBox(height: 16),
             OutlinedButton(
@@ -59,7 +61,8 @@ class _RewardedCreditSheetState extends ConsumerState<RewardedCreditSheet> {
         children: [
           const SectionHeader(
             'Kredi kazan',
-            subtitle: 'İstersen reklam izle ya da premium ve kredi paketlerine geç.',
+            subtitle:
+                'İstersen reklam izle ya da premium ve kredi paketlerine geç.',
           ),
           const SizedBox(height: 16),
           const PrimaryCard(
@@ -68,7 +71,8 @@ class _RewardedCreditSheetState extends ConsumerState<RewardedCreditSheet> {
               children: [
                 Text('1 reklam izle → 1 analiz kazan'),
                 SizedBox(height: 8),
-                Text('Reklam izlemek tamamen isteğe bağlıdır. Ödül kazanılınca kredi hesabına işlenir.'),
+                Text(
+                    'Reklam izlemek tamamen isteğe bağlıdır. Ödül kazanılınca kredi hesabına işlenir.'),
               ],
             ),
           ),
@@ -86,9 +90,15 @@ class _RewardedCreditSheetState extends ConsumerState<RewardedCreditSheet> {
                       status = null;
                     });
                     await ref.read(rewardedAdServiceProvider).initialize();
-                    final success = await ref.read(rewardedAdServiceProvider).showRewardedAd(() async {
-                      await ref.read(premiumRepositoryProvider).grantRewardedCredit();
-                      await ref.read(authControllerProvider.notifier).refreshProfile();
+                    final success = await ref
+                        .read(rewardedAdServiceProvider)
+                        .showRewardedAd(() async {
+                      await ref
+                          .read(premiumRepositoryProvider)
+                          .grantRewardedCredit();
+                      await ref
+                          .read(authControllerProvider.notifier)
+                          .refreshProfile();
                     });
                     if (!mounted) {
                       return;
@@ -100,7 +110,9 @@ class _RewardedCreditSheetState extends ConsumerState<RewardedCreditSheet> {
                           : 'Reklam şu anda açılamadı. Biraz sonra tekrar deneyebilirsin.';
                     });
                   },
-            child: Text(loading ? 'Reklam hazırlanıyor...' : '1 Reklam İzle, 1 Analiz Kazan'),
+            child: Text(loading
+                ? 'Reklam hazırlanıyor...'
+                : '1 Reklam İzle, 1 Analiz Kazan'),
           ),
           const SizedBox(height: 10),
           OutlinedButton(

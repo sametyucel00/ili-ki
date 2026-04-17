@@ -30,7 +30,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
           return;
         }
         final elapsed = DateTime.now().difference(_startedAt);
-        final remaining = const Duration(milliseconds: 1200) - elapsed;
+        final remaining = const Duration(milliseconds: 2800) - elapsed;
         final target = user.isOnboarded ? '/home' : '/onboarding';
         Timer(remaining.isNegative ? Duration.zero : remaining, () {
           if (mounted) {

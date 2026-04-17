@@ -16,16 +16,20 @@ import 'package:iliski_kocu_ai/shared/models/app_config_model.dart';
 
 final connectivityProvider = Provider<Connectivity>((ref) => Connectivity());
 
-final localCacheServiceProvider = Provider<LocalCacheService>((ref) => LocalCacheService());
-final analyticsServiceProvider = Provider<AnalyticsService>((ref) => const AnalyticsService());
-final remoteConfigServiceProvider = Provider<RemoteConfigService>((ref) => const RemoteConfigService());
+final localCacheServiceProvider =
+    Provider<LocalCacheService>((ref) => LocalCacheService());
+final analyticsServiceProvider =
+    Provider<AnalyticsService>((ref) => const AnalyticsService());
+final remoteConfigServiceProvider =
+    Provider<RemoteConfigService>((ref) => const RemoteConfigService());
 final connectivityServiceProvider = Provider<ConnectivityService>(
   (ref) => ConnectivityService(ref.watch(connectivityProvider)),
 );
 final notificationServiceProvider = Provider<NotificationService>(
   (ref) => NotificationService(ref.watch(analyticsServiceProvider)),
 );
-final paywallServiceProvider = Provider<PaywallService>((ref) => const PaywallService());
+final paywallServiceProvider =
+    Provider<PaywallService>((ref) => const PaywallService());
 final purchasesServiceProvider = Provider<PurchasesService>(
   (ref) => PurchasesService(ref.watch(analyticsServiceProvider)),
 );

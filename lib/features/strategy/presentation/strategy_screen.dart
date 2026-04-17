@@ -35,7 +35,8 @@ class _StrategyScreenState extends ConsumerState<StrategyScreen> {
         children: [
           const SectionHeader(
             'İletişim dinamiğini toparla',
-            subtitle: 'Uzun anlatımı özetleyen ve bir sonraki adıma odaklanan yorumlar al.',
+            subtitle:
+                'Uzun anlatımı özetleyen ve bir sonraki adıma odaklanan yorumlar al.',
           ),
           const SizedBox(height: 16),
           TextField(
@@ -46,19 +47,27 @@ class _StrategyScreenState extends ConsumerState<StrategyScreen> {
           const SizedBox(height: 16),
           PremiumDropdownField(
             label: 'İlişki türü',
-            helperText: 'Öneriler, seçtiğin ilişki çerçevesine göre dengelenir.',
+            helperText:
+                'Öneriler, seçtiğin ilişki çerçevesine göre dengelenir.',
             value: relationshipType,
-            items: const ['Belirsiz', 'Flört', 'İlişki', 'Eski partner', 'Arkadaşlık'],
+            items: const [
+              'Belirsiz',
+              'Flört',
+              'İlişki',
+              'Eski partner',
+              'Arkadaşlık'
+            ],
             onChanged: (value) => setState(() => relationshipType = value),
           ),
           const SizedBox(height: 18),
           ElevatedButton(
             onPressed: state.isLoading
                 ? null
-                : () => ref.read(analysisActionProvider.notifier).createStrategy(
-                      inputText: situationController.text.trim(),
-                      relationshipType: relationshipType,
-                    ),
+                : () =>
+                    ref.read(analysisActionProvider.notifier).createStrategy(
+                          inputText: situationController.text.trim(),
+                          relationshipType: relationshipType,
+                        ),
             child: Text(state.isLoading ? 'Yorumlanıyor...' : 'Analiz Et'),
           ),
           const SizedBox(height: 18),
@@ -71,7 +80,8 @@ class _StrategyScreenState extends ConsumerState<StrategyScreen> {
             isInsufficientCreditsError(state.error!)
                 ? EmptyStateView(
                     title: 'Kredi yetersiz',
-                    description: 'Reklam izleyerek kredi kazanabilir ya da premium seçeneklerine geçebilirsin.',
+                    description:
+                        'Reklam izleyerek kredi kazanabilir ya da premium seçeneklerine geçebilirsin.',
                     buttonText: 'Seçenekleri Aç',
                     onPressed: () => showModalBottomSheet<void>(
                       context: context,
@@ -81,7 +91,9 @@ class _StrategyScreenState extends ConsumerState<StrategyScreen> {
                   )
                 : ErrorStateView(
                     message: toUserFacingError(state.error!),
-                    onRetry: () => ref.read(analysisActionProvider.notifier).createStrategy(
+                    onRetry: () => ref
+                        .read(analysisActionProvider.notifier)
+                        .createStrategy(
                           inputText: situationController.text.trim(),
                           relationshipType: relationshipType,
                         ),

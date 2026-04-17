@@ -18,7 +18,8 @@ class HomeScreen extends ConsumerWidget {
     final auth = ref.watch(authControllerProvider);
     final config = ref.watch(appConfigProvider);
     final usage = ref.watch(dailyUsageProvider);
-    final connectivity = ref.watch(connectivityServiceProvider).watchConnection();
+    final connectivity =
+        ref.watch(connectivityServiceProvider).watchConnection();
 
     return AppScaffold(
       title: AppStrings.appName,
@@ -47,7 +48,8 @@ class HomeScreen extends ConsumerWidget {
                   padding: EdgeInsets.only(bottom: 12),
                   child: InfoBanner(
                     icon: Icons.wifi_off_rounded,
-                    message: 'İnternet bağlantısı yok. Kayıtlı içerikler gösterilir, yeni analiz için bağlantı gerekir.',
+                    message:
+                        'İnternet bağlantısı yok. Kayıtlı içerikler gösterilir.',
                   ),
                 );
               },
@@ -95,7 +97,8 @@ class HomeScreen extends ConsumerWidget {
               ),
               error: (error, _) => ErrorStateView(
                 message: error.toString(),
-                onRetry: () => ref.read(authControllerProvider.notifier).refreshProfile(),
+                onRetry: () =>
+                    ref.read(authControllerProvider.notifier).refreshProfile(),
               ),
             ),
             const SizedBox(height: 18),
@@ -130,7 +133,8 @@ class HomeScreen extends ConsumerWidget {
                   children: [
                     Text('Bugünkü limitler'),
                     SizedBox(height: 8),
-                    Text('Limit bilgileri şu anda alınamadı. Varsayılan kullanım akışı devam eder.'),
+                    Text(
+                        'Limit bilgileri şu anda alınamadı. Varsayılan kullanım akışı devam eder.'),
                   ],
                 ),
               ),
@@ -248,7 +252,8 @@ class _DailyLimitCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tone = Theme.of(context).colorScheme;
-    final dailyLimit = isPremium ? config.linkedDailyLimit : config.guestDailyLimit;
+    final dailyLimit =
+        isPremium ? config.linkedDailyLimit : config.guestDailyLimit;
     final remaining = (dailyLimit - usedToday).clamp(0, dailyLimit);
 
     return Container(
@@ -279,66 +284,60 @@ class _DailyLimitCard extends StatelessWidget {
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 18),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: _MetricTile(
-                  label: 'Bugün kalan hak',
-                  value: '$remaining / $dailyLimit',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _MetricTile(
-                  label: 'Başlangıç kredisi',
-                  value: '${config.starterCredits} kredi',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: _MetricTile(
-                  label: 'Mesaj Analizi',
-                  value: '${config.messageAnalysisCost} kredi',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _MetricTile(
-                  label: 'Cevap Yazdır',
-                  value: '${config.replyGenerationCost} kredi',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: _MetricTile(
-                  label: 'Durumu Anlat',
-                  value: '${config.situationStrategyCost} kredi',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _MetricTile(
-                  label: 'Premium günlük hak',
-                  value: '${config.linkedDailyLimit} kez',
-                ),
-              ),
+          _MetricGrid(
+            metrics: [
+              _MetricData('Bugün kalan hak', '$remaining / $dailyLimit'),
+              _MetricData(
+                  'Başlangıç kredisi', '${config.starterCredits} kredi'),
+              _MetricData(
+                  'Mesaj Analizi', '${config.messageAnalysisCost} kredi'),
+              _MetricData(
+                  'Cevap Yazdır', '${config.replyGenerationCost} kredi'),
+              _MetricData(
+                  'Durumu Anlat', '${config.situationStrategyCost} kredi'),
+              _MetricData(
+                  'Premium günlük hak', '${config.linkedDailyLimit} kez'),
             ],
           ),
         ],
       ),
     );
   }
+}
+
+class _MetricGrid extends StatelessWidget {
+  const _MetricGrid({required this.metrics});
+
+  final List<_MetricData> metrics;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = (constraints.maxWidth - 12) / 2;
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: metrics
+              .map(
+                (item) => SizedBox(
+                  width: width,
+                  height: 92,
+                  child: _MetricTile(label: item.label, value: item.value),
+                ),
+              )
+              .toList(),
+        );
+      },
+    );
+  }
+}
+
+class _MetricData {
+  const _MetricData(this.label, this.value);
+
+  final String label;
+  final String value;
 }
 
 class _MetricTile extends StatelessWidget {
@@ -349,22 +348,28 @@ class _MetricTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 82,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.72),
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label, style: Theme.of(context).textTheme.labelLarge),
-            Text(value, style: Theme.of(context).textTheme.titleMedium),
-          ],
-        ),
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelLarge),
+          Text(value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleMedium),
+        ],
       ),
     );
   }

@@ -10,7 +10,14 @@ class HistoryRepository {
 
   Future<List<AnalysisRecord>> getHistory({bool favoritesOnly = false}) async {
     final cached = await _cache.readCachedAnalyses();
-    final records = cached.map(AnalysisRecord.fromMap).toList();
+    final records = <AnalysisRecord>[];
+    for (final item in cached) {
+      try {
+        records.add(AnalysisRecord.fromMap(item));
+      } catch (_) {
+        // Skip old or malformed local records so history never opens blank.
+      }
+    }
     if (!favoritesOnly) {
       return records;
     }

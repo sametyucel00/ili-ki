@@ -6,7 +6,8 @@ import 'package:iliski_kocu_ai/core/services/providers.dart';
 import 'package:iliski_kocu_ai/core/utils/error_text.dart';
 import 'package:iliski_kocu_ai/shared/widgets/common_widgets.dart';
 
-final analysisDetailProvider = FutureProvider.autoDispose.family((ref, String id) {
+final analysisDetailProvider =
+    FutureProvider.autoDispose.family((ref, String id) {
   return ref.read(analysisRepositoryProvider).getAnalysisById(id);
 });
 
@@ -51,57 +52,68 @@ class AnalysisDetailScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SectionHeader('Özet'),
+                    const SectionHeader('Kısa yorum'),
                     const SizedBox(height: 12),
                     Text(item.aiSummary),
-                    if (item.interestLevel != null) Text('İlgi seviyesi: ${item.interestLevel}'),
-                    if (item.clarityLevel != null) Text('Netlik seviyesi: ${item.clarityLevel}'),
-                    if (item.neutralityNote != null) Text('Belirsizlik notu: ${item.neutralityNote}'),
+                    const SizedBox(height: 14),
+                    _InfoLine(label: 'Olası niyet', value: item.aiIntent),
+                    _InfoLine(
+                        label: 'İlgi seviyesi', value: item.interestLevel),
+                    _InfoLine(
+                        label: 'Netlik seviyesi', value: item.clarityLevel),
+                    if (item.neutralityNote != null) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        item.neutralityNote!,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              PrimaryCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SectionHeader('Önerilen yaklaşım'),
                     const SizedBox(height: 12),
-                    Text('Öneri: ${item.aiSuggestedAction}'),
+                    Text(item.aiSuggestedAction),
                   ],
                 ),
               ),
               if (item.aiRiskFlags.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                PrimaryCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SectionHeader('Dikkat noktaları'),
-                      const SizedBox(height: 12),
-                      ...item.aiRiskFlags.map((flag) => Text('• $flag')),
-                    ],
-                  ),
-                ),
+                _BulletedCard(
+                    title: 'Dikkat noktaları', items: item.aiRiskFlags),
               ],
-              if (item.aiReplyOptions.isNotEmpty) ...[
+              if (item.likelyDynamics.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                PrimaryCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SectionHeader('Cevap önerileri'),
-                      const SizedBox(height: 12),
-                      ...item.aiReplyOptions.map(
-                        (reply) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Text('• $reply'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                _BulletedCard(
+                    title: 'Olası dinamikler', items: item.likelyDynamics),
+              ],
+              if (item.avoidNow.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                _BulletedCard(title: 'Şimdilik kaçın', items: item.avoidNow),
               ],
               if (item.nextSteps.isNotEmpty) ...[
                 const SizedBox(height: 12),
+                _BulletedCard(title: 'Sonraki adımlar', items: item.nextSteps),
+              ],
+              if (item.aiReplyOptions.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                _BulletedCard(
+                    title: 'Cevap önerileri', items: item.aiReplyOptions),
+              ],
+              if ((item.optionalMessage ?? '').isNotEmpty) ...[
+                const SizedBox(height: 12),
                 PrimaryCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SectionHeader('Sonraki adımlar'),
+                      const SectionHeader('Kısa mesaj önerisi'),
                       const SizedBox(height: 12),
-                      ...item.nextSteps.map((step) => Text('• $step')),
+                      Text(item.optionalMessage!),
                     ],
                   ),
                 ),
@@ -113,13 +125,14 @@ class AnalysisDetailScreen extends ConsumerWidget {
                 children: [
                   OutlinedButton(
                     onPressed: () async {
-                      await Clipboard.setData(ClipboardData(text: item.aiSummary));
+                      await Clipboard.setData(
+                          ClipboardData(text: item.aiSummary));
                       await ref.read(analyticsServiceProvider).logEvent(
                         'result_copied',
                         {'source': 'detail'},
                       );
                     },
-                    child: const Text('Özeti Kopyala'),
+                    child: const Text('Yorumu Kopyala'),
                   ),
                   OutlinedButton(
                     onPressed: () async {
@@ -129,11 +142,14 @@ class AnalysisDetailScreen extends ConsumerWidget {
                           );
                       ref.invalidate(analysisDetailProvider(analysisId));
                     },
-                    child: Text(item.isFavorite ? 'Favoriden Çıkar' : 'Favorile'),
+                    child:
+                        Text(item.isFavorite ? 'Favoriden Çıkar' : 'Favorile'),
                   ),
                   OutlinedButton(
                     onPressed: () async {
-                      await ref.read(analysisRepositoryProvider).deleteAnalysis(analysisId);
+                      await ref
+                          .read(analysisRepositoryProvider)
+                          .deleteAnalysis(analysisId);
                       if (context.mounted) {
                         context.pop();
                       }
@@ -150,6 +166,50 @@ class AnalysisDetailScreen extends ConsumerWidget {
           message: toUserFacingError(error),
           onRetry: () => ref.invalidate(analysisDetailProvider(analysisId)),
         ),
+      ),
+    );
+  }
+}
+
+class _InfoLine extends StatelessWidget {
+  const _InfoLine({required this.label, required this.value});
+
+  final String label;
+  final String? value;
+
+  @override
+  Widget build(BuildContext context) {
+    if (value == null || value!.trim().isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text('$label: $value'),
+    );
+  }
+}
+
+class _BulletedCard extends StatelessWidget {
+  const _BulletedCard({required this.title, required this.items});
+
+  final String title;
+  final List<String> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return PrimaryCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SectionHeader(title),
+          const SizedBox(height: 12),
+          ...items.map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text('• $item'),
+            ),
+          ),
+        ],
       ),
     );
   }

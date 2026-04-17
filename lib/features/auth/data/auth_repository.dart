@@ -57,7 +57,8 @@ class AuthRepository {
   Future<void> markOnboardingCompleted() async {
     await _cache.markOnboardingSeen();
     final user = await getCurrentProfile();
-    final updated = user.copyWith(isOnboarded: true, lastLoginAt: DateTime.now());
+    final updated =
+        user.copyWith(isOnboarded: true, lastLoginAt: DateTime.now());
     await _cache.writeUserProfile(updated.toMap());
     await _analytics.logEvent('onboarding_completed');
   }
@@ -109,9 +110,10 @@ class AuthRepository {
 
     final hasIncompletePremiumState =
         (localPlanType == 'premium' || localSubscriptionStatus == 'active') &&
-        (localPremiumExpiry == null || localPremiumProductId == null);
+            (localPremiumExpiry == null || localPremiumProductId == null);
     if (hasIncompletePremiumState ||
-        (localPremiumExpiry != null && localPremiumExpiry.isBefore(DateTime.now()))) {
+        (localPremiumExpiry != null &&
+            localPremiumExpiry.isBefore(DateTime.now()))) {
       await _cache.clearLocalPremiumState();
       final fallback = user.copyWith(
         planType: 'free',

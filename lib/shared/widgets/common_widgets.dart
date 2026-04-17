@@ -20,6 +20,7 @@ class AppScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      behavior: HitTestBehavior.translucent,
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         appBar: AppBar(title: Text(title), actions: actions),
@@ -143,7 +144,10 @@ class LoadingList extends StatelessWidget {
       itemBuilder: (context, index) => Container(
         height: 90,
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+          color: Theme.of(context)
+              .colorScheme
+              .surfaceContainerHighest
+              .withValues(alpha: 0.35),
           borderRadius: BorderRadius.circular(20),
         ),
       ),
@@ -158,12 +162,20 @@ class AnalysisListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final title =
+        item.aiSummary.trim().isEmpty ? item.inputText : item.aiSummary;
     return ListTile(
-      tileColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+      tileColor: Theme.of(context)
+          .colorScheme
+          .surfaceContainerHighest
+          .withValues(alpha: 0.3),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Text(item.aiSummary, maxLines: 2, overflow: TextOverflow.ellipsis),
-      subtitle: Text(DateFormat('d MMM, HH:mm', 'tr_TR').format(item.createdAt)),
-      trailing: Icon(item.isFavorite ? Icons.favorite_rounded : Icons.chevron_right_rounded),
+      title: Text(title, maxLines: 2, overflow: TextOverflow.ellipsis),
+      subtitle:
+          Text(DateFormat('d MMM, HH:mm', 'tr_TR').format(item.createdAt)),
+      trailing: Icon(item.isFavorite
+          ? Icons.favorite_rounded
+          : Icons.chevron_right_rounded),
       onTap: () => context.push('/detail/${item.id}'),
     );
   }
@@ -200,51 +212,6 @@ class InfoBanner extends StatelessWidget {
   }
 }
 
-class SelectionChipGroup extends StatelessWidget {
-  const SelectionChipGroup({
-    required this.label,
-    required this.value,
-    required this.options,
-    required this.onChanged,
-    this.helperText,
-    super.key,
-  });
-
-  final String label;
-  final String value;
-  final List<String> options;
-  final ValueChanged<String> onChanged;
-  final String? helperText;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: Theme.of(context).textTheme.titleSmall),
-        if (helperText != null) ...[
-          const SizedBox(height: 6),
-          Text(helperText!, style: Theme.of(context).textTheme.bodySmall),
-        ],
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: options
-              .map(
-                (option) => ChoiceChip(
-                  label: Text(option),
-                  selected: option == value,
-                  onSelected: (_) => onChanged(option),
-                ),
-              )
-              .toList(),
-        ),
-      ],
-    );
-  }
-}
-
 class PremiumDropdownField extends StatelessWidget {
   const PremiumDropdownField({
     required this.label,
@@ -276,7 +243,8 @@ class PremiumDropdownField extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.38),
+            color: theme.colorScheme.surfaceContainerHighest
+                .withValues(alpha: 0.38),
             borderRadius: BorderRadius.circular(22),
             border: Border.all(
               color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),

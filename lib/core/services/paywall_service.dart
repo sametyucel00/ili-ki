@@ -24,6 +24,7 @@ class PaywallService {
     if (user?.isPremium == true) {
       return false;
     }
-    return completedAnalyses >= config.softPaywallThreshold || (user?.creditBalance ?? 0) <= 0;
+    return completedAnalyses >= config.softPaywallThreshold ||
+        (user?.creditBalance ?? 0) <= 0;
   }
 }

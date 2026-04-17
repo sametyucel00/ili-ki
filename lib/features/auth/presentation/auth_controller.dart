@@ -13,7 +13,8 @@ class AuthController extends AsyncNotifier<AppUser?> {
 
   Future<void> refreshProfile() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => ref.read(authRepositoryProvider).getCurrentProfile());
+    state = await AsyncValue.guard(
+        () => ref.read(authRepositoryProvider).getCurrentProfile());
   }
 
   Future<void> completeOnboarding() async {
@@ -53,7 +54,8 @@ class AuthController extends AsyncNotifier<AppUser?> {
   Future<void> deleteAccount() async {
     await ref.read(authRepositoryProvider).deleteAccount();
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => ref.read(authRepositoryProvider).bootstrapSession());
+    state = await AsyncValue.guard(
+        () => ref.read(authRepositoryProvider).bootstrapSession());
   }
 
   Future<void> updateDisplayName(String displayName) async {

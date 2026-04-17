@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:iliski_kocu_ai/core/errors/app_exception.dart';
 import 'package:iliski_kocu_ai/core/services/analytics_service.dart';
 import 'package:iliski_kocu_ai/core/services/local_cache_service.dart';
@@ -24,6 +26,7 @@ class AnalysisRepository {
     String? context,
     String? relationshipType,
   }) async {
+    _requireText(message);
     await _analytics.logEvent('analysis_started', {'type': 'message_analysis'});
     return _buildLocalMessageAnalysis(
       message: message,
@@ -39,6 +42,7 @@ class AnalysisRepository {
     required String responseLength,
     required bool emojiPreference,
   }) async {
+    _requireText(message);
     return _buildLocalReplyGeneration(
       message: message,
       context: context,
@@ -52,6 +56,7 @@ class AnalysisRepository {
     required String situation,
     String? relationshipType,
   }) async {
+    _requireText(situation);
     return _buildLocalSituationStrategy(
       situation: situation,
       relationshipType: relationshipType,
@@ -66,7 +71,15 @@ class AnalysisRepository {
 
   Future<List<AnalysisRecord>> loadCachedHistory() async {
     final items = await _cache.readCachedAnalyses();
-    return items.map(AnalysisRecord.fromMap).toList();
+    final records = <AnalysisRecord>[];
+    for (final item in items) {
+      try {
+        records.add(AnalysisRecord.fromMap(item));
+      } catch (_) {
+        // Skip malformed old cache entries.
+      }
+    }
+    return records;
   }
 
   Future<AnalysisRecord?> getAnalysisById(String id) async {
@@ -89,7 +102,8 @@ class AnalysisRepository {
 
   Future<void> deleteAnalysis(String id) async {
     final cached = await _cache.readCachedAnalyses();
-    await _cache.writeCachedAnalyses(cached.where((item) => item['id'] != id).toList());
+    await _cache
+        .writeCachedAnalyses(cached.where((item) => item['id'] != id).toList());
   }
 
   Future<int> getCompletedAnalysisCount() => _cache.getCompletedAnalysisCount();
@@ -102,8 +116,8 @@ class AnalysisRepository {
     await _checkDailyLimit();
     await _consumeLocalCredits(1);
 
+    final profile = _messageProfile(message, context);
     final now = DateTime.now();
-    final summary = message.length > 90 ? '${message.substring(0, 90)}...' : message;
     final record = AnalysisRecord(
       id: _uuid.v4(),
       uid: 'local_user',
@@ -114,23 +128,20 @@ class AnalysisRepository {
       tone: null,
       responseLength: null,
       emojiPreference: null,
-      aiSummary: 'Mesaj genel olarak temkinli ve yoruma açık görünüyor. Öne çıkan bölüm: $summary',
-      aiIntent: 'Belirsiz',
-      aiRiskFlags: const [],
-      aiSuggestedAction: 'Kısa, net ve sakin bir cevap vermek şu aşamada daha güvenli olabilir.',
-      aiReplyOptions: const [
-        'Tamam, müsait olduğunda konuşabiliriz.',
-        'Anladım, uygun olduğunda yazarsın.',
-        'Sorun değil, sonra devam ederiz.',
-      ],
+      aiSummary: profile.summary,
+      aiIntent: profile.intent,
+      aiRiskFlags: profile.riskFlags,
+      aiSuggestedAction: profile.recommendedAction,
+      aiReplyOptions: profile.replyOptions,
       rawModelOutput: const {},
       creditsUsed: 1,
       isFavorite: false,
       createdAt: now,
       updatedAt: now,
-      neutralityNote: 'Bu sonuç cihaz içi üretim modundan geldiği için yorum daha genel tutuldu.',
-      clarityLevel: 'Orta',
-      interestLevel: 'Belirsiz',
+      neutralityNote:
+          'Bu yorum kesinlik iddiası taşımaz; yalnızca mesajın tonu, netliği ve bağlamına göre olası bir okuma sunar.',
+      clarityLevel: profile.clarityLevel,
+      interestLevel: profile.interestLevel,
       avoidNow: const [],
       nextSteps: const [],
       likelyDynamics: const [],
@@ -156,12 +167,8 @@ class AnalysisRepository {
     await _checkDailyLimit();
     await _consumeLocalCredits(1);
 
-    final suffix = emojiPreference ? ' 🙂' : '';
-    final options = <String>[
-      'Anladım, müsait olduğunda devam ederiz$suffix',
-      'Tamam, haberleşiriz$suffix',
-      'Olur, sonra konuşalım$suffix',
-    ];
+    final options =
+        _replyOptions(message, tone, responseLength, emojiPreference);
     final now = DateTime.now();
     final record = AnalysisRecord(
       id: _uuid.v4(),
@@ -173,10 +180,12 @@ class AnalysisRepository {
       tone: tone,
       responseLength: responseLength,
       emojiPreference: emojiPreference,
-      aiSummary: 'Cevap seçenekleri hazırlandı.',
+      aiSummary:
+          '$tone tonda $responseLength uzunlukta 3 cevap seçeneği hazırlandı.',
       aiIntent: null,
       aiRiskFlags: const [],
-      aiSuggestedAction: 'Ton seçimine göre en doğal gelen cevabı seçebilirsin.',
+      aiSuggestedAction:
+          'En doğal gelen cevabı seçip gerekirse kendi konuşma tarzına göre küçükçe yumuşatabilirsin.',
       aiReplyOptions: options,
       rawModelOutput: const {},
       creditsUsed: 1,
@@ -207,6 +216,18 @@ class AnalysisRepository {
     await _checkDailyLimit();
     await _consumeLocalCredits(2);
 
+    final lower = situation.toLowerCase();
+    final isCold = lower.contains('soğuk') ||
+        lower.contains('geç') ||
+        lower.contains('cevap verm');
+    final isConflict = lower.contains('tartış') ||
+        lower.contains('kavga') ||
+        lower.contains('kırıld');
+    final summary = isConflict
+        ? 'Durumda kırgınlık veya savunmaya geçme ihtimali öne çıkıyor.'
+        : isCold
+            ? 'Durumda iletişim temposu ve beklenti farkı belirgin görünüyor.'
+            : 'Durumda netlik ihtiyacı var; acele karar yerine sakin bir çerçeve daha iyi olabilir.';
     final now = DateTime.now();
     final record = AnalysisRecord(
       id: _uuid.v4(),
@@ -218,10 +239,13 @@ class AnalysisRepository {
       tone: null,
       responseLength: null,
       emojiPreference: null,
-      aiSummary: 'Durumda tempo ve beklenti farkı olabilir.',
+      aiSummary: summary,
       aiIntent: null,
-      aiRiskFlags: const [],
-      aiSuggestedAction: 'Tek bir net mesaj ve biraz alan tanımak daha sağlıklı olabilir.',
+      aiRiskFlags: isConflict
+          ? const ['Duygusal yoğunluk yüksekse mesajı büyütme riski olabilir.']
+          : const [],
+      aiSuggestedAction:
+          'Önce tek bir net hedef belirle: açıklık mı istiyorsun, sakinleşmek mi, yoksa konuşmayı kapatmak mı?',
       aiReplyOptions: const [],
       rawModelOutput: const {},
       creditsUsed: 2,
@@ -231,10 +255,23 @@ class AnalysisRepository {
       neutralityNote: null,
       clarityLevel: null,
       interestLevel: null,
-      avoidNow: const ['Arka arkaya baskı kuran mesajlar atmak'],
-      nextSteps: const ['Biraz alan tanı', 'Tek bir net mesaj seç', 'Gelen cevaba göre devam et'],
-      likelyDynamics: const ['İletişim temposu şu an eşleşmiyor olabilir'],
-      optionalMessage: 'Müsait olduğunda konuşabiliriz, acele etmiyorum.',
+      avoidNow: const [
+        'Arka arkaya baskı kuran mesajlar atmak',
+        'Karşı tarafın niyetinden kesin eminmiş gibi davranmak',
+      ],
+      nextSteps: const [
+        'Duygunu kısa ve suçlamadan ifade et',
+        'Yanıt için makul bir alan bırak',
+        'Gelen tepkiye göre konuşmayı sürdür veya sınır koy',
+      ],
+      likelyDynamics: isCold
+          ? const [
+              'İletişim temposu şu an eşleşmiyor olabilir',
+              'Karşı taraf net olmayan bir alanda kalıyor olabilir'
+            ]
+          : const ['Beklenti ve ifade biçimi farklılaşmış olabilir'],
+      optionalMessage:
+          'Bunu büyütmek istemiyorum ama netleşmek iyi gelir. Uygun olduğunda sakin sakin konuşalım.',
     );
     await _persistCache(record);
     final count = await _cache.incrementCompletedAnalysisCount();
@@ -245,10 +282,183 @@ class AnalysisRepository {
     return record;
   }
 
+  _MessageProfile _messageProfile(String message, String? context) {
+    final lower = '$message ${context ?? ''}'.toLowerCase();
+    final short = message.trim().length < 18;
+    final hasDelay = lower.contains('sonra') ||
+        lower.contains('müsait') ||
+        lower.contains('yoğun');
+    final hasWarmth = lower.contains('özled') ||
+        lower.contains('merak') ||
+        lower.contains('görüş') ||
+        lower.contains('❤️');
+    final hasDistance = lower.contains('bilmiyorum') ||
+        lower.contains('kararsız') ||
+        lower.contains('istemiyorum');
+    final hasApology = lower.contains('kusura') ||
+        lower.contains('özür') ||
+        lower.contains('haklısın');
+
+    if (hasWarmth) {
+      return const _MessageProfile(
+        summary:
+            'Mesajda sıcaklık ve iletişimi sürdürme isteği öne çıkıyor. Yine de tek mesajdan kesin niyet çıkarmamak daha sağlıklı.',
+        intent: 'Yakınlaşma veya konuşmayı sürdürme',
+        interestLevel: 'Orta-yüksek',
+        clarityLevel: 'Orta',
+        riskFlags: [],
+        recommendedAction:
+            'Cevabı sıcak ama abartısız tut. Karşı tarafa alan bırakan doğal bir devam cümlesi iyi çalışır.',
+        replyOptions: [
+          'Ben de konuşmayı isterim, uygun olduğunda haberleşelim.',
+          'Güzel söyledin, ben de bunu sakin sakin konuşmak isterim.',
+          'Olur, uygun bir zamanda devam edelim.',
+        ],
+      );
+    }
+
+    if (hasDistance) {
+      return const _MessageProfile(
+        summary:
+            'Mesajda mesafe veya kararsızlık sinyali var. Bu kesin bir kopuş anlamına gelmeyebilir ama baskı kurmamak önemli.',
+        intent: 'Alan isteme veya netleşememe',
+        interestLevel: 'Belirsiz',
+        clarityLevel: 'Orta',
+        riskFlags: ['Üstelemek konuşmayı gerebilir.'],
+        recommendedAction:
+            'Kısa, saygılı ve alan tanıyan bir cevap ver. Netlik istiyorsan bunu tek cümleyle sor.',
+        replyOptions: [
+          'Anlıyorum, düşünmek istersen alan bırakırım.',
+          'Netleşmek istersen sakin şekilde konuşabiliriz.',
+          'Tamam, seni zorlamak istemem. Uygun olduğunda konuşuruz.',
+        ],
+      );
+    }
+
+    if (hasApology) {
+      return const _MessageProfile(
+        summary:
+            'Mesajda yumuşama veya sorumluluk alma tonu var. Bu, konuşmayı daha sakin bir zemine çekmek için iyi bir fırsat olabilir.',
+        intent: 'Onarma veya gerginliği azaltma',
+        interestLevel: 'Orta',
+        clarityLevel: 'Yüksek',
+        riskFlags: [],
+        recommendedAction:
+            'Cevabında hem sınırını hem de konuşmaya açık olduğunu dengeli şekilde göster.',
+        replyOptions: [
+          'Bunu söylemen iyi geldi. Ben de sakin konuşmak isterim.',
+          'Anladım, ben de konuyu büyütmeden netleşmek isterim.',
+          'Teşekkür ederim, uygun olduğunda konuşalım.',
+        ],
+      );
+    }
+
+    if (hasDelay || short) {
+      return const _MessageProfile(
+        summary:
+            'Mesaj kısa ve yoruma açık. Net bir olumsuzluk görünmüyor ama ilgi seviyesi de tek başına kesinleşmiyor.',
+        intent: 'Belirsiz veya nötr iletişim',
+        interestLevel: 'Belirsiz',
+        clarityLevel: 'Düşük-orta',
+        riskFlags: [],
+        recommendedAction:
+            'Acele anlam yükleme. Kısa, sakin ve konuşmayı açık bırakan bir cevap en güvenli seçenek.',
+        replyOptions: [
+          'Tamam, müsait olduğunda konuşuruz.',
+          'Anladım, uygun olunca haberleşiriz.',
+          'Sorun değil, sonra devam ederiz.',
+        ],
+      );
+    }
+
+    return const _MessageProfile(
+      summary:
+          'Mesajda belirgin bir yön var ama niyet tamamen net değil. Sakin ve açık bir cevap belirsizliği azaltabilir.',
+      intent: 'Konuşmayı sürdürme veya netleşme',
+      interestLevel: 'Orta',
+      clarityLevel: 'Orta',
+      riskFlags: [],
+      recommendedAction:
+          'Tek bir konuya odaklanan, kısa ve dengeli bir cevap ver. Fazla açıklama yapmak yerine netlik iste.',
+      replyOptions: [
+        'Anladım, bunu sakin şekilde konuşabiliriz.',
+        'Benim için netleşmesi iyi olur. Uygun olduğunda konuşalım.',
+        'Tamam, ne demek istediğini daha net duymak isterim.',
+      ],
+    );
+  }
+
+  List<String> _replyOptions(String message, String tone, String responseLength,
+      bool emojiPreference) {
+    final emoji = emojiPreference ? ' 🙂' : '';
+    final isLong = responseLength == 'Uzun';
+    final isShort = responseLength == 'Kısa';
+    final seed = message.codeUnits.fold<int>(0, (sum, value) => sum + value);
+    final variants = <String, List<String>>{
+      'Tatlı': [
+        'Anladım, bunu güzelce konuşabiliriz$emoji',
+        'Tamam, uygun olduğunda sakin sakin devam edelim$emoji',
+        'Ben buradayım, acele etmeden konuşuruz$emoji',
+      ],
+      'Havalı': [
+        'Tamamdır, uygun olduğunda haberleşiriz$emoji',
+        'Sorun yok, akışına bırakalım$emoji',
+        'Olur, müsait olduğunda devam ederiz$emoji',
+      ],
+      'Net': [
+        'Anladım. Benim için netleşmesi iyi olur, uygun olduğunda konuşalım.',
+        'Tamam, bunu uzatmadan açıkça konuşmak isterim.',
+        'Ben netlikten yanayım. Uygun olduğunda bunu konuşalım.',
+      ],
+      'Mesafeli': [
+        'Anladım, şu an biraz alan bırakmak daha iyi.',
+        'Tamam, uygun olunca konuşuruz.',
+        'Sorun değil, ben de biraz sakin kalmayı tercih ederim.',
+      ],
+      'Flörtöz': [
+        'Tamam, ama bu konuşmanın devamını merak ettim$emoji',
+        'Olur, uygun olduğunda devam edelim; bence güzel bir yere gidebilir$emoji',
+        'Peki, bunu sonra biraz daha tatlı konuşalım$emoji',
+      ],
+      'Kibar': [
+        'Anladım, teşekkür ederim. Uygun olduğunda konuşabiliriz.',
+        'Tamam, bunu sakin bir zamanda konuşmak iyi olur.',
+        'Anlıyorum. Senin için de uygunsa sonra devam edelim.',
+      ],
+      'Sert ama saygılı': [
+        'Anladım ama bu konuda daha net olmamız gerekiyor.',
+        'Tamam, fakat belirsizlik uzarsa benim için sağlıklı olmaz.',
+        'Bunu saygıyla söylüyorum: netlik benim için önemli.',
+      ],
+      'Kapanış odaklı': [
+        'Anladım. Bu konuşmayı burada sakin şekilde kapatmak benim için daha iyi.',
+        'Tamam, ben bu noktada uzatmamayı tercih ediyorum.',
+        'Teşekkür ederim, ben artık bu konuyu kapatmak istiyorum.',
+      ],
+    };
+    final selected = [...(variants[tone] ?? variants['Kibar']!)];
+    selected.shuffle(Random(seed));
+    if (isLong) {
+      return selected
+          .take(3)
+          .map((item) =>
+              '$item Benim niyetim konuyu büyütmek değil; sadece daha sakin ve net ilerlemek.')
+          .toList();
+    }
+    if (isShort) {
+      return selected
+          .take(3)
+          .map((item) => item.split('.').first.trim())
+          .toList();
+    }
+    return selected.take(3).toList();
+  }
+
   Future<void> _consumeLocalCredits(int amount) async {
     final current = await _cache.getLocalCreditBalance() ?? 1;
     if (current < amount) {
-      throw const AppException('Insufficient credits.', code: 'insufficient_credits');
+      throw const AppException('Insufficient credits.',
+          code: 'insufficient_credits');
     }
     await _cache.consumeLocalCredit(fallbackBalance: current, amount: amount);
   }
@@ -272,6 +482,32 @@ class AnalysisRepository {
     }
     final planType = await _cache.getLocalPlanType();
     final status = await _cache.getLocalSubscriptionStatus();
-    return planType == 'premium' || status == 'active';
+    return (planType == 'premium' || status == 'active') && expiry != null;
   }
+
+  void _requireText(String value) {
+    if (value.trim().isEmpty) {
+      throw const AppException('Lütfen önce metin gir.', code: 'empty_input');
+    }
+  }
+}
+
+class _MessageProfile {
+  const _MessageProfile({
+    required this.summary,
+    required this.intent,
+    required this.interestLevel,
+    required this.clarityLevel,
+    required this.riskFlags,
+    required this.recommendedAction,
+    required this.replyOptions,
+  });
+
+  final String summary;
+  final String intent;
+  final String interestLevel;
+  final String clarityLevel;
+  final List<String> riskFlags;
+  final String recommendedAction;
+  final List<String> replyOptions;
 }

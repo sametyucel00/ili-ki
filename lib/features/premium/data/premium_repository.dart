@@ -28,7 +28,8 @@ class PurchaseHistoryItem {
     return PurchaseHistoryItem(
       title: (map['title'] as String?) ?? 'İşlem',
       note: (map['note'] as String?) ?? '',
-      createdAt: DateTime.tryParse((map['createdAt'] as String?) ?? '') ?? DateTime.now(),
+      createdAt: DateTime.tryParse((map['createdAt'] as String?) ?? '') ??
+          DateTime.now(),
     );
   }
 }
@@ -46,35 +47,36 @@ class PremiumRepository {
   final PurchasesService _purchases;
   final AnalyticsService _analytics;
 
-  bool get useAndroidPurchaseSimulation => _purchases.useAndroidPurchaseSimulation;
+  bool get useAndroidPurchaseSimulation =>
+      _purchases.useAndroidPurchaseSimulation;
 
   Future<List<ProductDetails>> loadProducts() async {
     if (useAndroidPurchaseSimulation) {
       final available = await _purchases.isAvailable().timeout(
-        const Duration(seconds: 3),
-        onTimeout: () => false,
-      );
+            const Duration(seconds: 3),
+            onTimeout: () => false,
+          );
       if (!available) {
         return _fallbackProducts;
       }
       final storeProducts = await _purchases.getProducts().timeout(
-        const Duration(seconds: 6),
-        onTimeout: () => <ProductDetails>[],
-      );
+            const Duration(seconds: 6),
+            onTimeout: () => <ProductDetails>[],
+          );
       return storeProducts.isEmpty ? _fallbackProducts : storeProducts;
     }
 
     final available = await _purchases.isAvailable().timeout(
-      const Duration(seconds: 3),
-      onTimeout: () => false,
-    );
+          const Duration(seconds: 3),
+          onTimeout: () => false,
+        );
     if (!available) {
       return [];
     }
     return _purchases.getProducts().timeout(
-      const Duration(seconds: 8),
-      onTimeout: () => <ProductDetails>[],
-    );
+          const Duration(seconds: 8),
+          onTimeout: () => <ProductDetails>[],
+        );
   }
 
   void attachPurchaseListener() {
@@ -85,13 +87,15 @@ class PremiumRepository {
 
   Future<PurchaseFeedback> restore() async {
     if (useAndroidPurchaseSimulation) {
-      await _analytics.logEvent('purchase_restored', {'mode': 'android_simulation'});
+      await _analytics
+          .logEvent('purchase_restored', {'mode': 'android_simulation'});
       return const PurchaseFeedback(message: 'Satın alımlar kontrol edildi.');
     }
 
     await _purchases.restorePurchases();
     await _analytics.logEvent('purchase_restored');
-    return const PurchaseFeedback(message: 'Satın alımları geri yükleme başlatıldı.');
+    return const PurchaseFeedback(
+        message: 'Satın alımları geri yükleme başlatıldı.');
   }
 
   Future<PurchaseFeedback> buyProduct(ProductDetails product) async {
@@ -128,7 +132,8 @@ class PremiumRepository {
   }
 
   Future<PurchaseFeedback> _applyLocalPurchase(String productId) async {
-    if (productId == 'com.hisle.app.premium.monthly' || productId == 'com.hisle.app.premium.yearly') {
+    if (productId == 'com.hisle.app.premium.monthly' ||
+        productId == 'com.hisle.app.premium.yearly') {
       final currentProductId = await _cache.getLocalPremiumProductId();
       if (currentProductId == productId) {
         return PurchaseFeedback(
@@ -145,7 +150,8 @@ class PremiumRepository {
         productId: productId,
       );
 
-      final didChangePlan = currentProductId != null && currentProductId != productId;
+      final didChangePlan =
+          currentProductId != null && currentProductId != productId;
       final message = didChangePlan
           ? 'Paketin ${_planTitle(productId)} olarak güncellendi.'
           : '${_planTitle(productId)} aktif edildi.';
@@ -168,7 +174,8 @@ class PremiumRepository {
       return const PurchaseFeedback(message: 'Paket tanınmadı.');
     }
     final currentCredits = await _cache.getLocalCreditBalance() ?? 1;
-    await _cache.addLocalCredits(fallbackBalance: currentCredits, amount: amount);
+    await _cache.addLocalCredits(
+        fallbackBalance: currentCredits, amount: amount);
     await _recordHistory(
       title: '$amount Kredi',
       note: '$amount kredi hesabına eklendi.',
@@ -219,7 +226,8 @@ class PremiumRepository {
         ProductDetails(
           id: 'com.hisle.app.credits.10',
           title: '10 Kredi',
-          description: 'Mesaj analizi, cevap yazdırma ve durum anlatma için ek kredi.',
+          description:
+              'Mesaj analizi, cevap yazdırma ve durum anlatma için ek kredi.',
           price: 'Satın al',
           rawPrice: 0,
           currencyCode: 'TRY',

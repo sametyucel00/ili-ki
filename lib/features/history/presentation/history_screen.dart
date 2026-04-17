@@ -5,8 +5,11 @@ import 'package:iliski_kocu_ai/core/services/providers.dart';
 import 'package:iliski_kocu_ai/core/utils/error_text.dart';
 import 'package:iliski_kocu_ai/shared/widgets/common_widgets.dart';
 
-final historyProvider = FutureProvider.autoDispose.family((ref, bool favoritesOnly) {
-  return ref.read(historyRepositoryProvider).getHistory(favoritesOnly: favoritesOnly);
+final historyProvider =
+    FutureProvider.autoDispose.family((ref, bool favoritesOnly) {
+  return ref
+      .read(historyRepositoryProvider)
+      .getHistory(favoritesOnly: favoritesOnly);
 });
 
 class HistoryScreen extends ConsumerStatefulWidget {
@@ -22,7 +25,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(analyticsServiceProvider).logEvent('history_opened'));
+    Future.microtask(
+        () => ref.read(analyticsServiceProvider).logEvent('history_opened'));
   }
 
   @override
@@ -50,7 +54,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           return ListView.separated(
             itemCount: items.length,
             separatorBuilder: (_, __) => const SizedBox(height: 10),
-            itemBuilder: (context, index) => AnalysisListTile(item: items[index]),
+            itemBuilder: (context, index) =>
+                AnalysisListTile(item: items[index]),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),

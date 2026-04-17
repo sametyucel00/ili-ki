@@ -18,10 +18,13 @@ class HelpCenterScreen extends StatelessWidget {
               children: [
                 SectionHeader('Sık sorulanlar'),
                 SizedBox(height: 12),
-                Text('• Hisle terapi veya profesyonel danışmanlık yerine geçmez.'),
+                Text(
+                    '• Hisle terapi veya profesyonel danışmanlık yerine geçmez.'),
                 Text('• Analizler yorumlayıcıdır; kesinlik iddia etmez.'),
-                Text('• Kredi, reklam ödülü ve satın alma hakları bu cihazdaki uygulama durumuna göre değişebilir.'),
-                Text('• Uygulamayı silersen yerel veriler ve kredi bilgileri kaybolabilir.'),
+                Text(
+                    '• Kredi, reklam ödülü ve satın alma hakları bu cihazdaki uygulama durumuna göre değişebilir.'),
+                Text(
+                    '• Uygulamayı silersen yerel veriler ve kredi bilgileri kaybolabilir.'),
               ],
             ),
           ),
@@ -69,7 +72,10 @@ class _HelpLinkTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      tileColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+      tileColor: Theme.of(context)
+          .colorScheme
+          .surfaceContainerHighest
+          .withValues(alpha: 0.35),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Text(title),
       subtitle: Text(subtitle),

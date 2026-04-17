@@ -44,7 +44,8 @@ class AppUser {
   final DateTime? deletedAt;
 
   bool get isPremium {
-    final hasPremiumState = planType == 'premium' || subscriptionStatus == 'active';
+    final hasPremiumState =
+        planType == 'premium' || subscriptionStatus == 'active';
     final expiry = subscriptionExpiryDate;
     return hasPremiumState && expiry != null && expiry.isAfter(DateTime.now());
   }
@@ -89,7 +90,8 @@ class AppUser {
       isOnboarded: isOnboarded ?? this.isOnboarded,
       subscriptionStatus: subscriptionStatus ?? this.subscriptionStatus,
       subscriptionPlatform: subscriptionPlatform ?? this.subscriptionPlatform,
-      subscriptionExpiryDate: subscriptionExpiryDate ?? this.subscriptionExpiryDate,
+      subscriptionExpiryDate:
+          subscriptionExpiryDate ?? this.subscriptionExpiryDate,
       notificationEnabled: notificationEnabled ?? this.notificationEnabled,
       deletedAt: deletedAt ?? this.deletedAt,
     );

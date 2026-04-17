@@ -125,7 +125,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     height: 10,
                     margin: const EdgeInsets.symmetric(horizontal: 4),
                     decoration: BoxDecoration(
-                      color: page == index ? const Color(0xFFB56A63) : const Color(0xFFD6C2BB),
+                      color: page == index
+                          ? const Color(0xFFB56A63)
+                          : const Color(0xFFD6C2BB),
                       borderRadius: BorderRadius.circular(999),
                     ),
                   ),
@@ -134,7 +136,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () async {
-                  await ref.read(authControllerProvider.notifier).completeOnboarding();
+                  await ref
+                      .read(authControllerProvider.notifier)
+                      .completeOnboarding();
                   if (context.mounted) {
                     context.go('/home');
                   }

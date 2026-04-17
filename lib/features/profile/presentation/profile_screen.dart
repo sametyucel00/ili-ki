@@ -10,8 +10,9 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authControllerProvider).valueOrNull;
-    final displayName =
-        user?.displayName?.trim().isNotEmpty == true ? user!.displayName! : 'İsimsiz kullanıcı';
+    final displayName = user?.displayName?.trim().isNotEmpty == true
+        ? user!.displayName!
+        : 'İsimsiz kullanıcı';
     final expiry = user?.subscriptionExpiryDate;
 
     return AppScaffold(
@@ -22,23 +23,23 @@ class ProfileScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  displayName,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
+                Text(displayName,
+                    style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 8),
                 Text(
                   user?.isPremium == true
                       ? 'Premium aktif. Bu cihazda satın alımlar ve analiz geçmişi kullanılabilir.'
-                      : 'Hisle bu sürümde doğrudan kullanım odaklı çalışır. Tüm kullanım verileri bu cihazda tutulur.',
+                      : 'Hisle doğrudan kullanım odaklı çalışır. Kullanım verileri bu cihazda tutulur.',
                 ),
                 if (user?.isPremium == true && expiry != null) ...[
                   const SizedBox(height: 8),
-                  Text('Premium bitişi: ${DateFormat('d MMMM yyyy', 'tr_TR').format(expiry)}'),
+                  Text(
+                      'Premium bitişi: ${DateFormat('d MMMM yyyy', 'tr_TR').format(expiry)}'),
                 ],
                 const SizedBox(height: 14),
                 OutlinedButton(
-                  onPressed: () => _showRenameDialog(context, ref, user?.displayName),
+                  onPressed: () =>
+                      _showRenameDialog(context, ref, user?.displayName),
                   child: const Text('İsmi değiştir'),
                 ),
               ],
@@ -83,7 +84,8 @@ class ProfileScreen extends ConsumerWidget {
               await ref.read(authControllerProvider.notifier).deleteAccount();
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Yeni bir yerel profil oluşturuldu.')),
+                  const SnackBar(
+                      content: Text('Yeni bir yerel profil oluşturuldu.')),
                 );
               }
             },
@@ -95,7 +97,8 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showRenameDialog(BuildContext context, WidgetRef ref, String? currentName) async {
+  Future<void> _showRenameDialog(
+      BuildContext context, WidgetRef ref, String? currentName) async {
     final controller = TextEditingController(text: currentName ?? '');
     await showDialog<void>(
       context: context,
@@ -119,7 +122,9 @@ class ProfileScreen extends ConsumerWidget {
               if (nextName.isEmpty) {
                 return;
               }
-              await ref.read(authControllerProvider.notifier).updateDisplayName(nextName);
+              await ref
+                  .read(authControllerProvider.notifier)
+                  .updateDisplayName(nextName);
               if (dialogContext.mounted) {
                 Navigator.of(dialogContext).pop();
               }

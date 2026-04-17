@@ -16,16 +16,19 @@ class PurchasesService {
   Future<bool> isAvailable() => _inAppPurchase.isAvailable();
 
   Future<List<ProductDetails>> getProducts() async {
-    final response = await _inAppPurchase.queryProductDetails(Env.premiumProductIds.toSet());
+    final response =
+        await _inAppPurchase.queryProductDetails(Env.premiumProductIds.toSet());
     return response.productDetails;
   }
 
-  void attachPurchaseListener(Future<void> Function(PurchaseDetails) onPurchase) {
+  void attachPurchaseListener(
+      Future<void> Function(PurchaseDetails) onPurchase) {
     _subscription ??= _inAppPurchase.purchaseStream.listen((purchases) async {
       for (final purchase in purchases) {
         if (purchase.status == PurchaseStatus.purchased ||
             purchase.status == PurchaseStatus.restored) {
-          await _analytics.logEvent('purchase_completed', {'product_id': purchase.productID});
+          await _analytics.logEvent(
+              'purchase_completed', {'product_id': purchase.productID});
           await onPurchase(purchase);
         }
         if (purchase.pendingCompletePurchase) {

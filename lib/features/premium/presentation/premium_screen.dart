@@ -8,16 +8,19 @@ import 'package:iliski_kocu_ai/shared/widgets/common_widgets.dart';
 import 'package:iliski_kocu_ai/shared/widgets/rewarded_credit_sheet.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
-final productsProvider = FutureProvider.autoDispose<List<ProductDetails>>((ref) async {
+final productsProvider =
+    FutureProvider.autoDispose<List<ProductDetails>>((ref) async {
   ref.read(premiumRepositoryProvider).attachPurchaseListener();
   return ref.read(premiumRepositoryProvider).loadProducts();
 });
 
-final premiumProductIdProvider = FutureProvider.autoDispose<String?>((ref) async {
+final premiumProductIdProvider =
+    FutureProvider.autoDispose<String?>((ref) async {
   return ref.read(localCacheServiceProvider).getLocalPremiumProductId();
 });
 
-final purchaseHistoryProvider = FutureProvider.autoDispose<List<PurchaseHistoryItem>>((ref) {
+final purchaseHistoryProvider =
+    FutureProvider.autoDispose<List<PurchaseHistoryItem>>((ref) {
   return ref.read(premiumRepositoryProvider).loadPurchaseHistory();
 });
 
@@ -31,7 +34,8 @@ class PremiumScreen extends ConsumerWidget {
     final user = ref.watch(authControllerProvider).valueOrNull;
     final activeProductId = ref.watch(premiumProductIdProvider).valueOrNull;
     final expiry = user?.subscriptionExpiryDate;
-    final remainingDays = expiry == null ? null : expiry.difference(DateTime.now()).inDays + 1;
+    final remainingDays =
+        expiry == null ? null : expiry.difference(DateTime.now()).inDays + 1;
 
     return AppScaffold(
       title: 'Premium ve Krediler',
@@ -44,13 +48,17 @@ class PremiumScreen extends ConsumerWidget {
                 Row(
                   children: [
                     Icon(
-                      user?.isPremium == true ? Icons.workspace_premium_rounded : Icons.lock_open_rounded,
+                      user?.isPremium == true
+                          ? Icons.workspace_premium_rounded
+                          : Icons.lock_open_rounded,
                       color: Theme.of(context).colorScheme.primary,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        user?.isPremium == true ? 'Premium aktif' : 'Standart kullanım',
+                        user?.isPremium == true
+                            ? 'Premium aktif'
+                            : 'Standart kullanım',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                     ),
@@ -70,7 +78,8 @@ class PremiumScreen extends ConsumerWidget {
                 ],
                 if (user?.isPremium == true && expiry != null) ...[
                   const SizedBox(height: 8),
-                  Text('Bitiş: ${DateFormat('d MMMM yyyy', 'tr_TR').format(expiry)}'),
+                  Text(
+                      'Bitiş: ${DateFormat('d MMMM yyyy', 'tr_TR').format(expiry)}'),
                   Text(
                     'Kalan süre: ${remainingDays != null && remainingDays > 0 ? '$remainingDays gün' : 'Bugün sona eriyor'}',
                   ),
@@ -157,7 +166,8 @@ class _PackagesCard extends ConsumerWidget {
           const SectionHeader('Paketler'),
           const SizedBox(height: 12),
           if (products.isEmpty)
-            const Text('Paketler şu anda bulunamadı. Mağaza ürünleri tanımlandıktan sonra burada görünür.')
+            const Text(
+                'Paketler şu anda bulunamadı. Mağaza ürünleri tanımlandıktan sonra burada görünür.')
           else
             ...products.map(
               (product) => Padding(
@@ -170,8 +180,12 @@ class _PackagesCard extends ConsumerWidget {
                     onPressed: product.id == activeProductId
                         ? null
                         : () async {
-                            final feedback = await ref.read(premiumRepositoryProvider).buyProduct(product);
-                            await ref.read(authControllerProvider.notifier).refreshProfile();
+                            final feedback = await ref
+                                .read(premiumRepositoryProvider)
+                                .buyProduct(product);
+                            await ref
+                                .read(authControllerProvider.notifier)
+                                .refreshProfile();
                             ref.invalidate(productsProvider);
                             ref.invalidate(premiumProductIdProvider);
                             ref.invalidate(purchaseHistoryProvider);
@@ -191,7 +205,8 @@ class _PackagesCard extends ConsumerWidget {
             ),
           OutlinedButton(
             onPressed: () async {
-              final feedback = await ref.read(premiumRepositoryProvider).restore();
+              final feedback =
+                  await ref.read(premiumRepositoryProvider).restore();
               await ref.read(authControllerProvider.notifier).refreshProfile();
               ref.invalidate(purchaseHistoryProvider);
               if (context.mounted) {
@@ -215,7 +230,9 @@ class _PackagesCard extends ConsumerWidget {
       return 'Aktif';
     }
     final isPremiumPlan = product.id.contains('.premium.');
-    if (isPremiumPlan && activeProductId != null && activeProductId.contains('.premium.')) {
+    if (isPremiumPlan &&
+        activeProductId != null &&
+        activeProductId.contains('.premium.')) {
       return 'Paketi Değiştir';
     }
     return product.price;
@@ -243,7 +260,8 @@ class _PurchaseHistoryCard extends StatelessWidget {
                 contentPadding: EdgeInsets.zero,
                 title: Text(item.title),
                 subtitle: Text(item.note),
-                trailing: Text(DateFormat('d MMM', 'tr_TR').format(item.createdAt)),
+                trailing:
+                    Text(DateFormat('d MMM', 'tr_TR').format(item.createdAt)),
               ),
             ),
         ],

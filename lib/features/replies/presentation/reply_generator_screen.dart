@@ -13,7 +13,8 @@ class ReplyGeneratorScreen extends ConsumerStatefulWidget {
   const ReplyGeneratorScreen({super.key});
 
   @override
-  ConsumerState<ReplyGeneratorScreen> createState() => _ReplyGeneratorScreenState();
+  ConsumerState<ReplyGeneratorScreen> createState() =>
+      _ReplyGeneratorScreenState();
 }
 
 class _ReplyGeneratorScreenState extends ConsumerState<ReplyGeneratorScreen> {
@@ -27,7 +28,8 @@ class _ReplyGeneratorScreenState extends ConsumerState<ReplyGeneratorScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(analysisActionProvider);
     final result = state.valueOrNull;
-    final replyResult = result?.type == AnalysisType.replyGeneration ? result : null;
+    final replyResult =
+        result?.type == AnalysisType.replyGeneration ? result : null;
 
     return AppScaffold(
       title: 'Cevap Yazdır',
@@ -35,13 +37,15 @@ class _ReplyGeneratorScreenState extends ConsumerState<ReplyGeneratorScreen> {
         children: [
           const SectionHeader(
             'Doğal cevap üret',
-            subtitle: 'Türkçe, kullanıma hazır ve role uygun üç seçenek oluştur.',
+            subtitle:
+                'Türkçe, kullanıma hazır ve role uygun üç seçenek oluştur.',
           ),
           const SizedBox(height: 16),
           TextField(
             controller: messageController,
             maxLines: 5,
-            decoration: const InputDecoration(hintText: 'Karşı taraftan gelen mesaj'),
+            decoration:
+                const InputDecoration(hintText: 'Karşı taraftan gelen mesaj'),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -58,7 +62,16 @@ class _ReplyGeneratorScreenState extends ConsumerState<ReplyGeneratorScreen> {
           PremiumDropdownField(
             label: 'Ton',
             value: tone,
-            items: const ['Tatlı', 'Havalı', 'Net', 'Mesafeli', 'Flörtöz', 'Kibar', 'Sert ama saygılı', 'Kapanış odaklı'],
+            items: const [
+              'Tatlı',
+              'Havalı',
+              'Net',
+              'Mesafeli',
+              'Flörtöz',
+              'Kibar',
+              'Sert ama saygılı',
+              'Kapanış odaklı'
+            ],
             onChanged: (value) => setState(() => tone = value),
           ),
           const SizedBox(height: 16),
@@ -77,13 +90,16 @@ class _ReplyGeneratorScreenState extends ConsumerState<ReplyGeneratorScreen> {
           ElevatedButton(
             onPressed: state.isLoading
                 ? null
-                : () => ref.read(analysisActionProvider.notifier).generateReplies(
-                      inputText: messageController.text.trim(),
-                      context: contextController.text.trim().isEmpty ? null : contextController.text.trim(),
-                      tone: tone,
-                      responseLength: responseLength,
-                      emojiPreference: emojiPreference,
-                    ),
+                : () =>
+                    ref.read(analysisActionProvider.notifier).generateReplies(
+                          inputText: messageController.text.trim(),
+                          context: contextController.text.trim().isEmpty
+                              ? null
+                              : contextController.text.trim(),
+                          tone: tone,
+                          responseLength: responseLength,
+                          emojiPreference: emojiPreference,
+                        ),
             child: Text(state.isLoading ? 'Üretiliyor...' : 'Cevapları Üret'),
           ),
           const SizedBox(height: 18),
@@ -96,7 +112,8 @@ class _ReplyGeneratorScreenState extends ConsumerState<ReplyGeneratorScreen> {
             isInsufficientCreditsError(state.error!)
                 ? EmptyStateView(
                     title: 'Kredi yetersiz',
-                    description: 'Reklam izleyerek kredi kazanabilir ya da premium seçeneklerine geçebilirsin.',
+                    description:
+                        'Reklam izleyerek kredi kazanabilir ya da premium seçeneklerine geçebilirsin.',
                     buttonText: 'Seçenekleri Aç',
                     onPressed: () => showModalBottomSheet<void>(
                       context: context,
@@ -106,9 +123,13 @@ class _ReplyGeneratorScreenState extends ConsumerState<ReplyGeneratorScreen> {
                   )
                 : ErrorStateView(
                     message: toUserFacingError(state.error!),
-                    onRetry: () => ref.read(analysisActionProvider.notifier).generateReplies(
+                    onRetry: () => ref
+                        .read(analysisActionProvider.notifier)
+                        .generateReplies(
                           inputText: messageController.text.trim(),
-                          context: contextController.text.trim().isEmpty ? null : contextController.text.trim(),
+                          context: contextController.text.trim().isEmpty
+                              ? null
+                              : contextController.text.trim(),
                           tone: tone,
                           responseLength: responseLength,
                           emojiPreference: emojiPreference,
@@ -129,7 +150,8 @@ class _ReplyGeneratorScreenState extends ConsumerState<ReplyGeneratorScreen> {
                         children: [
                           OutlinedButton(
                             onPressed: () async {
-                              await Clipboard.setData(ClipboardData(text: reply));
+                              await Clipboard.setData(
+                                  ClipboardData(text: reply));
                               await ref.read(analyticsServiceProvider).logEvent(
                                 'result_copied',
                                 {'source': 'reply_generator'},
@@ -138,7 +160,8 @@ class _ReplyGeneratorScreenState extends ConsumerState<ReplyGeneratorScreen> {
                             child: const Text('Kopyala'),
                           ),
                           OutlinedButton(
-                            onPressed: () => context.push('/detail/${replyResult.id}'),
+                            onPressed: () =>
+                                context.push('/detail/${replyResult.id}'),
                             child: const Text('Detay'),
                           ),
                         ],

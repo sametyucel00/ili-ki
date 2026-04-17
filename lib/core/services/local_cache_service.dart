@@ -19,7 +19,7 @@ class LocalCacheService {
   Future<List<Map<String, dynamic>>> readCachedAnalyses() async {
     final prefs = await SharedPreferences.getInstance();
     final values = prefs.getStringList(_historyKey) ?? <String>[];
-    return values.map((item) => jsonDecode(item) as Map<String, dynamic>).toList();
+    return _decodeMapList(values);
   }
 
   Future<void> writeCachedAnalyses(List<Map<String, dynamic>> items) async {
@@ -48,7 +48,12 @@ class LocalCacheService {
     if (raw == null || raw.isEmpty) {
       return null;
     }
-    return jsonDecode(raw) as Map<String, dynamic>;
+    try {
+      return jsonDecode(raw) as Map<String, dynamic>;
+    } catch (_) {
+      await prefs.remove(_userProfileKey);
+      return null;
+    }
   }
 
   Future<void> writeUserProfile(Map<String, dynamic> data) async {
@@ -78,7 +83,8 @@ class LocalCacheService {
     await prefs.setInt(_creditBalanceKey, value);
   }
 
-  Future<int> consumeLocalCredit({required int fallbackBalance, required int amount}) async {
+  Future<int> consumeLocalCredit(
+      {required int fallbackBalance, required int amount}) async {
     final prefs = await SharedPreferences.getInstance();
     final current = prefs.getInt(_creditBalanceKey) ?? fallbackBalance;
     final next = current - amount;
@@ -86,7 +92,8 @@ class LocalCacheService {
     return next;
   }
 
-  Future<int> addLocalCredits({required int fallbackBalance, required int amount}) async {
+  Future<int> addLocalCredits(
+      {required int fallbackBalance, required int amount}) async {
     final prefs = await SharedPreferences.getInstance();
     final current = prefs.getInt(_creditBalanceKey) ?? fallbackBalance;
     final next = current + amount;
@@ -140,7 +147,7 @@ class LocalCacheService {
   Future<List<Map<String, dynamic>>> readPurchaseHistory() async {
     final prefs = await SharedPreferences.getInstance();
     final values = prefs.getStringList(_purchaseHistoryKey) ?? <String>[];
-    return values.map((item) => jsonDecode(item) as Map<String, dynamic>).toList();
+    return _decodeMapList(values);
   }
 
   Future<void> appendPurchaseHistory(Map<String, dynamic> item) async {
@@ -178,5 +185,20 @@ class LocalCacheService {
   String _todayKey() {
     final now = DateTime.now();
     return '${now.year}-${now.month}-${now.day}';
+  }
+
+  List<Map<String, dynamic>> _decodeMapList(List<String> values) {
+    final decoded = <Map<String, dynamic>>[];
+    for (final item in values) {
+      try {
+        final value = jsonDecode(item);
+        if (value is Map) {
+          decoded.add(value.cast<String, dynamic>());
+        }
+      } catch (_) {
+        // Ignore stale local entries instead of breaking the whole screen.
+      }
+    }
+    return decoded;
   }
 }

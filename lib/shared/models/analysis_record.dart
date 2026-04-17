@@ -111,10 +111,11 @@ class AnalysisRecord {
       emojiPreference: map['emojiPreference'] as bool?,
       aiSummary: (map['aiSummary'] as String?) ?? '',
       aiIntent: map['aiIntent'] as String?,
-      aiRiskFlags: ((map['aiRiskFlags'] as List?) ?? const []).cast<String>(),
+      aiRiskFlags: _stringList(map['aiRiskFlags']),
       aiSuggestedAction: (map['aiSuggestedAction'] as String?) ?? '',
-      aiReplyOptions: ((map['aiReplyOptions'] as List?) ?? const []).cast<String>(),
-      rawModelOutput: (map['rawModelOutput'] as Map?)?.cast<String, dynamic>() ?? const {},
+      aiReplyOptions: _stringList(map['aiReplyOptions']),
+      rawModelOutput:
+          (map['rawModelOutput'] as Map?)?.cast<String, dynamic>() ?? const {},
       creditsUsed: (map['creditsUsed'] as num?)?.toInt() ?? 0,
       isFavorite: (map['isFavorite'] as bool?) ?? false,
       createdAt: ts(map['createdAt']),
@@ -122,10 +123,17 @@ class AnalysisRecord {
       neutralityNote: map['neutralityNote'] as String?,
       clarityLevel: map['clarityLevel'] as String?,
       interestLevel: map['interestLevel'] as String?,
-      avoidNow: ((map['avoidNow'] as List?) ?? const []).cast<String>(),
-      nextSteps: ((map['nextSteps'] as List?) ?? const []).cast<String>(),
-      likelyDynamics: ((map['likelyDynamics'] as List?) ?? const []).cast<String>(),
+      avoidNow: _stringList(map['avoidNow']),
+      nextSteps: _stringList(map['nextSteps']),
+      likelyDynamics: _stringList(map['likelyDynamics']),
       optionalMessage: map['optionalMessage'] as String?,
     );
+  }
+
+  static List<String> _stringList(dynamic value) {
+    if (value is! List) {
+      return const [];
+    }
+    return value.whereType<Object>().map((item) => item.toString()).toList();
   }
 }

@@ -20,21 +20,28 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: '/',
     routes: [
       GoRoute(path: '/', builder: (_, __) => const SplashScreen()),
-      GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
+      GoRoute(
+          path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
       GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),
-      GoRoute(path: '/analysis', builder: (_, __) => const MessageAnalysisScreen()),
-      GoRoute(path: '/replies', builder: (_, __) => const ReplyGeneratorScreen()),
+      GoRoute(
+          path: '/analysis', builder: (_, __) => const MessageAnalysisScreen()),
+      GoRoute(
+          path: '/replies', builder: (_, __) => const ReplyGeneratorScreen()),
       GoRoute(path: '/strategy', builder: (_, __) => const StrategyScreen()),
       GoRoute(path: '/history', builder: (_, __) => const HistoryScreen()),
       GoRoute(
         path: '/detail/:id',
-        builder: (_, state) => AnalysisDetailScreen(analysisId: state.pathParameters['id']!),
+        builder: (_, state) =>
+            AnalysisDetailScreen(analysisId: state.pathParameters['id']!),
       ),
-      GoRoute(path: '/link-account', builder: (_, __) => const AccountLinkingScreen()),
+      GoRoute(
+          path: '/link-account',
+          builder: (_, __) => const AccountLinkingScreen()),
       GoRoute(path: '/premium', builder: (_, __) => const PremiumScreen()),
       GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
       GoRoute(path: '/help', builder: (_, __) => const HelpCenterScreen()),
-      GoRoute(path: '/privacy', builder: (_, __) => const PrivacyPolicyScreen()),
+      GoRoute(
+          path: '/privacy', builder: (_, __) => const PrivacyPolicyScreen()),
       GoRoute(path: '/terms', builder: (_, __) => const TermsScreen()),
     ],
   );

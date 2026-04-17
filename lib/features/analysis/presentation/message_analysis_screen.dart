@@ -11,7 +11,8 @@ class MessageAnalysisScreen extends ConsumerStatefulWidget {
   const MessageAnalysisScreen({super.key});
 
   @override
-  ConsumerState<MessageAnalysisScreen> createState() => _MessageAnalysisScreenState();
+  ConsumerState<MessageAnalysisScreen> createState() =>
+      _MessageAnalysisScreenState();
 }
 
 class _MessageAnalysisScreenState extends ConsumerState<MessageAnalysisScreen> {
@@ -36,13 +37,15 @@ class _MessageAnalysisScreenState extends ConsumerState<MessageAnalysisScreen> {
         children: [
           const SectionHeader(
             'Mesajı yükle',
-            subtitle: 'Mesajı daha sakin ve daha net değerlendirmek için buraya ekle.',
+            subtitle:
+                'Mesajı daha sakin ve daha net değerlendirmek için buraya ekle.',
           ),
           const SizedBox(height: 16),
           TextField(
             controller: messageController,
             maxLines: 6,
-            decoration: const InputDecoration(hintText: 'Gelen mesajı buraya yapıştır'),
+            decoration:
+                const InputDecoration(hintText: 'Gelen mesajı buraya yapıştır'),
           ),
           const SizedBox(height: 14),
           TextField(
@@ -58,20 +61,30 @@ class _MessageAnalysisScreenState extends ConsumerState<MessageAnalysisScreen> {
           const SizedBox(height: 16),
           PremiumDropdownField(
             label: 'İlişki türü',
-            helperText: 'Bu seçim yorumun tonunu ve öneri dilini şekillendirir.',
+            helperText:
+                'Bu seçim yorumun tonunu ve öneri dilini şekillendirir.',
             value: relationshipType,
-            items: const ['Belirsiz', 'Flört', 'İlişki', 'Eski partner', 'Arkadaşlık'],
+            items: const [
+              'Belirsiz',
+              'Flört',
+              'İlişki',
+              'Eski partner',
+              'Arkadaşlık'
+            ],
             onChanged: (value) => setState(() => relationshipType = value),
           ),
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: state.isLoading
                 ? null
-                : () => ref.read(analysisActionProvider.notifier).analyzeMessage(
-                      inputText: messageController.text.trim(),
-                      context: contextController.text.trim().isEmpty ? null : contextController.text.trim(),
-                      relationshipType: relationshipType,
-                    ),
+                : () =>
+                    ref.read(analysisActionProvider.notifier).analyzeMessage(
+                          inputText: messageController.text.trim(),
+                          context: contextController.text.trim().isEmpty
+                              ? null
+                              : contextController.text.trim(),
+                          relationshipType: relationshipType,
+                        ),
             child: Text(state.isLoading ? 'Analiz ediliyor...' : 'Analiz Et'),
           ),
           const SizedBox(height: 18),
@@ -84,7 +97,8 @@ class _MessageAnalysisScreenState extends ConsumerState<MessageAnalysisScreen> {
             isInsufficientCreditsError(state.error!)
                 ? EmptyStateView(
                     title: 'Kredi yetersiz',
-                    description: 'Reklam izleyerek kredi kazanabilir ya da premium seçeneklerine geçebilirsin.',
+                    description:
+                        'Reklam izleyerek kredi kazanabilir ya da premium seçeneklerine geçebilirsin.',
                     buttonText: 'Seçenekleri Aç',
                     onPressed: () => showModalBottomSheet<void>(
                       context: context,
@@ -94,9 +108,13 @@ class _MessageAnalysisScreenState extends ConsumerState<MessageAnalysisScreen> {
                   )
                 : ErrorStateView(
                     message: toUserFacingError(state.error!),
-                    onRetry: () => ref.read(analysisActionProvider.notifier).analyzeMessage(
+                    onRetry: () => ref
+                        .read(analysisActionProvider.notifier)
+                        .analyzeMessage(
                           inputText: messageController.text.trim(),
-                          context: contextController.text.trim(),
+                          context: contextController.text.trim().isEmpty
+                              ? null
+                              : contextController.text.trim(),
                           relationshipType: relationshipType,
                         ),
                   ),

@@ -18,7 +18,7 @@ class AccountLinkingScreen extends StatelessWidget {
                 SectionHeader('Hisle doğrudan devam eder'),
                 SizedBox(height: 12),
                 Text(
-                  'Bu sürümde hesap işlemleri kapalıdır. Premium, krediler ve geçmiş bu cihaz içinde çalışmaya devam eder.',
+                  'Bu sürümde hesap işlemleri kapalıdır. Premium, krediler ve geçmiş doğrudan kullanılmaya devam eder.',
                 ),
               ],
             ),

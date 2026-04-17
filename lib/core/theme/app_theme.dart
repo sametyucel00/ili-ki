@@ -45,14 +45,16 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           minimumSize: const Size.fromHeight(56),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size.fromHeight(52),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -73,7 +75,8 @@ class AppTheme {
         contentPadding: const EdgeInsets.all(18),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        backgroundColor:
+            colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
         side: BorderSide.none,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
       ),
@@ -117,7 +120,8 @@ class AppStatusColors extends ThemeExtension<AppStatusColors> {
   }
 
   @override
-  AppStatusColors lerp(covariant ThemeExtension<AppStatusColors>? other, double t) {
+  AppStatusColors lerp(
+      covariant ThemeExtension<AppStatusColors>? other, double t) {
     if (other is! AppStatusColors) {
       return this;
     }
