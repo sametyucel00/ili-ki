@@ -132,8 +132,8 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
         run: |
-          APPLE_TEAM_ID_CLEAN=$(printf "%s" "$APPLE_TEAM_ID" | tr -d '\r\n')
-          IOS_BUNDLE_ID_CLEAN=$(printf "%s" "$IOS_BUNDLE_ID" | tr -d '\r\n')
+          export APPLE_TEAM_ID_CLEAN=$(printf "%s" "$APPLE_TEAM_ID" | tr -d '\r\n')
+          export IOS_BUNDLE_ID_CLEAN=$(printf "%s" "$IOS_BUNDLE_ID" | tr -d '\r\n')
           python3 - <<'PY'
           from pathlib import Path
           import os
