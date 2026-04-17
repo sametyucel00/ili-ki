@@ -131,6 +131,7 @@ jobs:
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
+          IOS_PROFILE_NAME_RESOLVED: ${{ env.IOS_PROFILE_NAME_RESOLVED }}
         run: |
           export APPLE_TEAM_ID_CLEAN=$(printf "%s" "$APPLE_TEAM_ID" | tr -d '\r\n')
           export IOS_BUNDLE_ID_CLEAN=$(printf "%s" "$IOS_BUNDLE_ID" | tr -d '\r\n')
@@ -143,6 +144,7 @@ jobs:
           text = path.read_text()
           team_id = os.environ["APPLE_TEAM_ID_CLEAN"]
           bundle_id = os.environ["IOS_BUNDLE_ID_CLEAN"]
+          profile_name = os.environ["IOS_PROFILE_NAME_RESOLVED"].strip()
 
           runner_config_ids = [
               "97C147061CF9000F007C117D",  # Debug
@@ -163,7 +165,8 @@ jobs:
               replacements = {
                   "PRODUCT_BUNDLE_IDENTIFIER": f"{bundle_id};",
                   "DEVELOPMENT_TEAM": f"{team_id};",
-                  "CODE_SIGN_STYLE": "Automatic;",
+                  "PROVISIONING_PROFILE_SPECIFIER": f"\"{profile_name}\";",
+                  "CODE_SIGN_STYLE": "Manual;",
                   "CODE_SIGN_IDENTITY[sdk=iphoneos*]": "\"Apple Distribution\";",
               }
 
