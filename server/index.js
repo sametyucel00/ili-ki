@@ -168,7 +168,7 @@ async function callAiProvider(type, input) {
   }
 
   const parsed = JSON.parse(content);
-  return normalize(type, parsed);
+  return normalize(type, parsed, input);
 }
 
 function systemPrompt() {
@@ -257,7 +257,7 @@ function clean(value) {
   return value.trim().slice(0, 6000);
 }
 
-function normalize(type, parsed) {
+function normalize(type, parsed, input) {
   if (type === 'message_analysis') {
     return {
       summary: stringOr(parsed.summary, 'Mesaj sakin şekilde yorumlandı.'),
@@ -277,7 +277,7 @@ function normalize(type, parsed) {
   if (type === 'reply_generation') {
     return {
       recommendedAction: normalizeReplyAction(parsed.recommendedAction),
-      replyOptions: ensureReplyOptions(parsed.replyOptions).slice(0, 3),
+      replyOptions: ensureReplyOptions(parsed.replyOptions, input).slice(0, 3),
     };
   }
 
@@ -304,19 +304,27 @@ function listOfStrings(value) {
 
 function normalizeReplyAction(value) {
   const action = stringOr(value, 'Sakin ve alan tanıyan bir cevap seç.');
-  if (looksLikeReplyText(action) || looksTooCold(action)) {
-    return 'Karşı tarafın alan ihtiyacını kabul eden, sakin ve kapıyı açık bırakan bir cevap seç.';
+  if (
+    looksLikeReplyText(action) ||
+    looksTooCold(action) ||
+    looksMirroredOrSelfReferential(action) ||
+    action.trim().endsWith('?')
+  ) {
+    return 'Karşı tarafın alan ihtiyacını kabul eden, sakin ve kapıyı açık bırakan kısa bir cevap seç.';
   }
   return action;
 }
 
-function ensureReplyOptions(value) {
-  const options = listOfStrings(value).filter((item) => isGoodReplyOption(item));
-  const fallback = [
-    'Anlıyorum, kendine zaman ayırman iyi olabilir. Uygun olduğunda konuşuruz.',
-    'Tamam, seni zorlamak istemem. Müsait hissettiğinde yazarsın.',
-    'Sorun değil, biraz alan bırakıyorum. Hazır olduğunda konuşabiliriz.',
-  ];
+function ensureReplyOptions(value, input) {
+  const options = listOfStrings(value)
+    .map((item) => item.replace(/\s+/g, ' ').trim())
+    .filter((item) => isGoodReplyOption(item));
+  const fallback = buildReplyFallbacks(input);
+
+  if (options.length < 2) {
+    return fallback.slice(0, 3);
+  }
+
   return [...options, ...fallback].filter(unique).slice(0, 3);
 }
 
@@ -325,7 +333,12 @@ function isGoodReplyOption(text) {
   if (trimmed.length < 28) {
     return false;
   }
-  return !looksLikeMirroredIncomingMessage(trimmed) && !looksTooCold(trimmed);
+  return (
+    !looksLikeMirroredIncomingMessage(trimmed) &&
+    !looksMirroredOrSelfReferential(trimmed) &&
+    !looksTooCold(trimmed) &&
+    !looksPushy(trimmed)
+  );
 }
 
 function looksLikeMirroredIncomingMessage(text) {
@@ -359,6 +372,100 @@ function looksLikeReplyText(text) {
     lower.includes('konuşuruz') ||
     lower.includes('iyi günler')
   );
+}
+
+function looksMirroredOrSelfReferential(text) {
+  const lower = text.toLocaleLowerCase('tr').replace(/[.!?]/g, ' ');
+  return (
+    lower.includes('konuşmak istemiyorum') ||
+    lower.includes('yalnız kalmak istiyorum') ||
+    lower.includes('gerçekten konuşmak istemiyorum') ||
+    lower.includes('başka bir zaman ne zaman uygun olur') ||
+    lower.includes('seni düşünüyorum') ||
+    lower.includes('umarım yarın daha iyi hissederim') ||
+    lower.includes('çok yoruldum')
+  );
+}
+
+function looksPushy(text) {
+  const lower = text.toLocaleLowerCase('tr');
+  return (
+    lower.includes('ne zaman uygun olur') ||
+    lower.includes('ne zaman konuşabiliriz') ||
+    lower.includes('neden') ||
+    lower.includes('ama neden') ||
+    lower.includes('hemen')
+  );
+}
+
+function buildReplyFallbacks(input) {
+  const tone = clean(input?.tone).toLocaleLowerCase('tr');
+  const responseLength = clean(input?.responseLength).toLocaleLowerCase('tr');
+  const wantsEmoji = Boolean(input?.emojiPreference);
+
+  const baseSets = {
+    havali: [
+      'Tamam, alanına saygı duyuyorum. Rahat hissettiğinde yazarsın.',
+      'Sorun değil, biraz alan bırakayım. Uygun olduğunda konuşuruz.',
+      'Anladım, kendine vakit ayır. Sonra haberleşiriz.',
+    ],
+    net: [
+      'Tamam, seni zorlamayacağım. Uygun olduğunda yazabilirsin.',
+      'Anlıyorum, biraz alan tanıyorum. Hazır olduğunda konuşuruz.',
+      'Mesajını aldım, şimdilik geri çekiliyorum. Uygun olunca yazarsın.',
+    ],
+    mesafeli: [
+      'Tamam, alanına saygı duyuyorum. Uygun olduğunda dönüş yaparsın.',
+      'Anladım, şimdilik üzerine gelmeyeceğim. Hazır olduğunda konuşuruz.',
+      'Sorun değil, biraz mesafe bırakıyorum. Uygun olunca yazarsın.',
+    ],
+    tatli: [
+      'Tamam, seni zorlamayayım. Biraz nefes al, istersen sonra konuşuruz.',
+      'Anlıyorum, kendine zaman ayırman iyi gelebilir. Hazır olduğunda buradayım.',
+      'Sorun değil, biraz alan bırakıyorum. İçin rahat edince konuşuruz.',
+    ],
+    kibar: [
+      'Anlıyorum, kendine zaman ayırman iyi olabilir. Uygun olduğunda konuşuruz.',
+      'Tamam, seni zorlamak istemem. Müsait hissettiğinde yazarsın.',
+      'Sorun değil, biraz alan bırakıyorum. Hazır olduğunda konuşabiliriz.',
+    ],
+    default: [
+      'Anlıyorum, kendine zaman ayırman iyi olabilir. Uygun olduğunda konuşuruz.',
+      'Tamam, seni zorlamak istemem. Müsait hissettiğinde yazarsın.',
+      'Sorun değil, biraz alan bırakıyorum. Hazır olduğunda konuşabiliriz.',
+    ],
+  };
+
+  const selected =
+    baseSets[tone] ||
+    (tone.includes('haval') ? baseSets.havali : null) ||
+    (tone.includes('tatl') ? baseSets.tatli : null) ||
+    (tone.includes('mesaf') ? baseSets.mesafeli : null) ||
+    (tone.includes('net') ? baseSets.net : null) ||
+    (tone.includes('kibar') ? baseSets.kibar : null) ||
+    baseSets.default;
+
+  return selected.map((item) => adjustReplyLengthAndEmoji(item, responseLength, wantsEmoji));
+}
+
+function adjustReplyLengthAndEmoji(text, responseLength, wantsEmoji) {
+  let result = text;
+
+  if (responseLength.includes('kısa') || responseLength.includes('kisa')) {
+    result = result
+      .replace(' kendine zaman ayırman iyi olabilir.', '.')
+      .replace(' Hazır olduğunda konuşabiliriz.', ' Uygun olduğunda konuşuruz.')
+      .replace(' biraz alan bırakıyorum.', '')
+      .replace(' seni zorlamak istemem.', '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  if (wantsEmoji && !/[🙂😊🌿]/.test(result)) {
+    result = `${result} 🙂`;
+  }
+
+  return result;
 }
 
 function unique(item, index, array) {
