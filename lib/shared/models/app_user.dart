@@ -43,7 +43,11 @@ class AppUser {
   final bool notificationEnabled;
   final DateTime? deletedAt;
 
-  bool get isPremium => planType == 'premium' || subscriptionStatus == 'active';
+  bool get isPremium {
+    final hasPremiumState = planType == 'premium' || subscriptionStatus == 'active';
+    final expiry = subscriptionExpiryDate;
+    return hasPremiumState && expiry != null && expiry.isAfter(DateTime.now());
+  }
 
   AppUser copyWith({
     String? uid,

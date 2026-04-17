@@ -13,6 +13,26 @@ class PurchaseFeedback {
   final bool didChangeEntitlement;
 }
 
+class PurchaseHistoryItem {
+  const PurchaseHistoryItem({
+    required this.title,
+    required this.note,
+    required this.createdAt,
+  });
+
+  final String title;
+  final String note;
+  final DateTime createdAt;
+
+  factory PurchaseHistoryItem.fromMap(Map<String, dynamic> map) {
+    return PurchaseHistoryItem(
+      title: (map['title'] as String?) ?? 'İşlem',
+      note: (map['note'] as String?) ?? '',
+      createdAt: DateTime.tryParse((map['createdAt'] as String?) ?? '') ?? DateTime.now(),
+    );
+  }
+}
+
 class PremiumRepository {
   PremiumRepository({
     required LocalCacheService cache,
@@ -30,19 +50,31 @@ class PremiumRepository {
 
   Future<List<ProductDetails>> loadProducts() async {
     if (useAndroidPurchaseSimulation) {
-      final available = await _purchases.isAvailable();
+      final available = await _purchases.isAvailable().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => false,
+      );
       if (!available) {
         return _debugProducts;
       }
-      final storeProducts = await _purchases.getProducts();
+      final storeProducts = await _purchases.getProducts().timeout(
+        const Duration(seconds: 6),
+        onTimeout: () => <ProductDetails>[],
+      );
       return storeProducts.isEmpty ? _debugProducts : storeProducts;
     }
 
-    final available = await _purchases.isAvailable();
+    final available = await _purchases.isAvailable().timeout(
+      const Duration(seconds: 3),
+      onTimeout: () => false,
+    );
     if (!available) {
       return [];
     }
-    return _purchases.getProducts();
+    return _purchases.getProducts().timeout(
+      const Duration(seconds: 8),
+      onTimeout: () => <ProductDetails>[],
+    );
   }
 
   void attachPurchaseListener() {
@@ -83,7 +115,16 @@ class PremiumRepository {
   Future<void> grantRewardedCredit() async {
     final current = await _cache.getLocalCreditBalance() ?? 1;
     await _cache.addLocalCredits(fallbackBalance: current, amount: 1);
+    await _recordHistory(
+      title: 'Reklam ödülü',
+      note: '1 kredi eklendi.',
+    );
     await _analytics.logEvent('rewarded_credit_granted');
+  }
+
+  Future<List<PurchaseHistoryItem>> loadPurchaseHistory() async {
+    final values = await _cache.readPurchaseHistory();
+    return values.map(PurchaseHistoryItem.fromMap).toList();
   }
 
   Future<PurchaseFeedback> _applyLocalPurchase(String productId) async {
@@ -105,6 +146,13 @@ class PremiumRepository {
       );
 
       final didChangePlan = currentProductId != null && currentProductId != productId;
+      final message = didChangePlan
+          ? 'Paketin ${_planTitle(productId)} olarak güncellendi.'
+          : '${_planTitle(productId)} aktif edildi.';
+      await _recordHistory(
+        title: _planTitle(productId),
+        note: message,
+      );
       return PurchaseFeedback(
         message: didChangePlan
             ? 'Paketin ${_planTitle(productId)} olarak güncellendi.'
@@ -123,6 +171,10 @@ class PremiumRepository {
     }
     final currentCredits = await _cache.getLocalCreditBalance() ?? 1;
     await _cache.addLocalCredits(fallbackBalance: currentCredits, amount: amount);
+    await _recordHistory(
+      title: '$amount Kredi',
+      note: '$amount kredi hesabına eklendi.',
+    );
     return PurchaseFeedback(
       message: '$amount kredi hesabına eklendi.',
       didChangeEntitlement: true,
@@ -134,6 +186,17 @@ class PremiumRepository {
       return 'Premium Yıllık';
     }
     return 'Premium Aylık';
+  }
+
+  Future<void> _recordHistory({
+    required String title,
+    required String note,
+  }) {
+    return _cache.appendPurchaseHistory({
+      'title': title,
+      'note': note,
+      'createdAt': DateTime.now().toIso8601String(),
+    });
   }
 
   List<ProductDetails> get _debugProducts => [

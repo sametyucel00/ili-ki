@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:iliski_kocu_ai/core/config/env.dart';
 import 'package:iliski_kocu_ai/core/services/providers.dart';
 import 'package:iliski_kocu_ai/features/auth/presentation/auth_controller.dart';
+import 'package:iliski_kocu_ai/features/premium/data/premium_repository.dart';
 import 'package:iliski_kocu_ai/shared/widgets/common_widgets.dart';
 import 'package:iliski_kocu_ai/shared/widgets/rewarded_credit_sheet.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
@@ -17,12 +18,17 @@ final premiumProductIdProvider = FutureProvider.autoDispose<String?>((ref) async
   return ref.read(localCacheServiceProvider).getLocalPremiumProductId();
 });
 
+final purchaseHistoryProvider = FutureProvider.autoDispose<List<PurchaseHistoryItem>>((ref) {
+  return ref.read(premiumRepositoryProvider).loadPurchaseHistory();
+});
+
 class PremiumScreen extends ConsumerWidget {
   const PremiumScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final offerings = ref.watch(productsProvider);
+    final history = ref.watch(purchaseHistoryProvider);
     final user = ref.watch(authControllerProvider).valueOrNull;
     final activeProductId = ref.watch(premiumProductIdProvider).valueOrNull;
     final isAndroidSimulation = Env.useAndroidPurchaseSimulation;
@@ -37,15 +43,28 @@ class PremiumScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Mevcut kredi: ${user?.creditBalance ?? 0}',
-                  style: Theme.of(context).textTheme.titleLarge,
+                Row(
+                  children: [
+                    Icon(
+                      user?.isPremium == true ? Icons.workspace_premium_rounded : Icons.lock_open_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        user?.isPremium == true ? 'Premium aktif' : 'Standart kullanım',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
+                Text('Mevcut kredi: ${user?.creditBalance ?? 0}'),
+                const SizedBox(height: 8),
                 Text(
                   user?.isPremium == true
-                      ? 'Premium aktif'
-                      : 'Premium ile daha derin analiz ve daha yüksek limitler açılır.',
+                      ? 'Günlük premium limitlerin açık.'
+                      : 'Premium ile daha yüksek günlük limit ve gelişmiş kullanım açılır.',
                 ),
                 if (user?.isPremium == true && activeProductId != null) ...[
                   const SizedBox(height: 8),
@@ -94,70 +113,103 @@ class PremiumScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           offerings.when(
-            data: (data) => PrimaryCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SectionHeader('Paketler'),
-                  const SizedBox(height: 12),
-                  if (data.isEmpty)
-                    const Text(
-                      'Store ürünleri henüz bulunamadı. Product IDlerini mağazada aynı isimlerle tanımla.',
-                    )
-                  else
-                    ...data.map(
-                      (product) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(product.title),
-                          subtitle: Text(product.description),
-                          trailing: FilledButton(
-                            onPressed: product.id == activeProductId
-                                ? null
-                                : () async {
-                                    final feedback =
-                                        await ref.read(premiumRepositoryProvider).buyProduct(product);
-                                    await ref.read(authControllerProvider.notifier).refreshProfile();
-                                    ref.invalidate(productsProvider);
-                                    ref.invalidate(premiumProductIdProvider);
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text(feedback.message)),
-                                      );
-                                    }
-                                  },
-                            child: Text(_buttonTextForProduct(
-                              product: product,
-                              activeProductId: activeProductId,
-                            )),
-                          ),
-                        ),
-                      ),
-                    ),
-                  OutlinedButton(
-                    onPressed: () async {
-                      final feedback = await ref.read(premiumRepositoryProvider).restore();
-                      await ref.read(authControllerProvider.notifier).refreshProfile();
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(feedback.message)),
-                        );
-                      }
-                    },
-                    child: const Text('Satın alımları geri yükle'),
-                  ),
-                ],
-              ),
+            data: (data) => _PackagesCard(
+              products: data,
+              activeProductId: activeProductId,
             ),
             loading: () => const SizedBox(
               height: 220,
               child: Center(child: CircularProgressIndicator()),
             ),
             error: (error, _) => ErrorStateView(
-              message: error.toString(),
+              message: 'Paketler şu anda yüklenemedi. Tekrar deneyebilirsin.',
               onRetry: () => ref.invalidate(productsProvider),
             ),
+          ),
+          const SizedBox(height: 16),
+          history.when(
+            data: (items) => _PurchaseHistoryCard(items: items),
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _planTitle(String productId) {
+    if (productId.endsWith('.yearly')) {
+      return 'Premium Yıllık';
+    }
+    if (productId.endsWith('.monthly')) {
+      return 'Premium Aylık';
+    }
+    return 'Premium';
+  }
+}
+
+class _PackagesCard extends ConsumerWidget {
+  const _PackagesCard({
+    required this.products,
+    required this.activeProductId,
+  });
+
+  final List<ProductDetails> products;
+  final String? activeProductId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return PrimaryCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader('Paketler'),
+          const SizedBox(height: 12),
+          if (products.isEmpty)
+            const Text('Paketler şu anda bulunamadı. Mağaza ürünleri tanımlandıktan sonra burada görünür.')
+          else
+            ...products.map(
+              (product) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(product.title),
+                  subtitle: Text(product.description),
+                  trailing: FilledButton(
+                    onPressed: product.id == activeProductId
+                        ? null
+                        : () async {
+                            final feedback = await ref.read(premiumRepositoryProvider).buyProduct(product);
+                            await ref.read(authControllerProvider.notifier).refreshProfile();
+                            ref.invalidate(productsProvider);
+                            ref.invalidate(premiumProductIdProvider);
+                            ref.invalidate(purchaseHistoryProvider);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(feedback.message)),
+                              );
+                            }
+                          },
+                    child: Text(_buttonTextForProduct(
+                      product: product,
+                      activeProductId: activeProductId,
+                    )),
+                  ),
+                ),
+              ),
+            ),
+          OutlinedButton(
+            onPressed: () async {
+              final feedback = await ref.read(premiumRepositoryProvider).restore();
+              await ref.read(authControllerProvider.notifier).refreshProfile();
+              ref.invalidate(purchaseHistoryProvider);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(feedback.message)),
+                );
+              }
+            },
+            child: const Text('Satın alımları geri yükle'),
           ),
         ],
       ),
@@ -177,14 +229,34 @@ class PremiumScreen extends ConsumerWidget {
     }
     return product.price;
   }
+}
 
-  String _planTitle(String productId) {
-    if (productId.endsWith('.yearly')) {
-      return 'Premium Yıllık';
-    }
-    if (productId.endsWith('.monthly')) {
-      return 'Premium Aylık';
-    }
-    return 'Premium';
+class _PurchaseHistoryCard extends StatelessWidget {
+  const _PurchaseHistoryCard({required this.items});
+
+  final List<PurchaseHistoryItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return PrimaryCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader('Satın alma ve kredi geçmişi'),
+          const SizedBox(height: 12),
+          if (items.isEmpty)
+            const Text('Henüz satın alma veya kredi işlemi yok.')
+          else
+            ...items.map(
+              (item) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(item.title),
+                subtitle: Text(item.note),
+                trailing: Text(DateFormat('d MMM', 'tr_TR').format(item.createdAt)),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }

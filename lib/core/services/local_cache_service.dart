@@ -12,6 +12,7 @@ class LocalCacheService {
   static const _userProfileKey = 'local_user_profile';
   static const _premiumExpiryKey = 'local_premium_expiry';
   static const _premiumProductIdKey = 'local_premium_product_id';
+  static const _purchaseHistoryKey = 'local_purchase_history';
   static const _dailyUsageCountKey = 'daily_usage_count';
   static const _dailyUsageDateKey = 'daily_usage_date';
 
@@ -134,6 +135,19 @@ class LocalCacheService {
     await prefs.remove(_subscriptionStatusKey);
     await prefs.remove(_premiumExpiryKey);
     await prefs.remove(_premiumProductIdKey);
+  }
+
+  Future<List<Map<String, dynamic>>> readPurchaseHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final values = prefs.getStringList(_purchaseHistoryKey) ?? <String>[];
+    return values.map((item) => jsonDecode(item) as Map<String, dynamic>).toList();
+  }
+
+  Future<void> appendPurchaseHistory(Map<String, dynamic> item) async {
+    final prefs = await SharedPreferences.getInstance();
+    final current = prefs.getStringList(_purchaseHistoryKey) ?? <String>[];
+    final next = [jsonEncode(item), ...current].take(30).toList();
+    await prefs.setStringList(_purchaseHistoryKey, next);
   }
 
   Future<int> getTodayUsageCount() async {

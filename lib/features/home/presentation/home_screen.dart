@@ -62,10 +62,10 @@ class HomeScreen extends ConsumerWidget {
             auth.when(
               data: (user) => PrimaryCard(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Bugün hazır',
+                      user?.isPremium == true ? 'Premium aktif' : 'Bugün hazır',
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 10),
@@ -76,23 +76,13 @@ class HomeScreen extends ConsumerWidget {
                     const SizedBox(height: 8),
                     Text(
                       user?.isPremium == true
-                          ? 'Premium aktif. Daha yüksek günlük limit ve gelişmiş akışlar açık.'
+                          ? 'Daha yüksek günlük limit ve premium kullanım açık.'
                           : 'Kredi ekleyebilir, premium özellikleri inceleyebilir veya reklam izleyerek analiz hakkı kazanabilirsin.',
                     ),
                     const SizedBox(height: 14),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: [
-                        FilledButton(
-                          onPressed: () => context.push('/premium'),
-                          child: const Text('Premium ve Krediler'),
-                        ),
-                        OutlinedButton(
-                          onPressed: () => context.push('/history'),
-                          child: const Text('Geçmişe Git'),
-                        ),
-                      ],
+                    FilledButton(
+                      onPressed: () => context.push('/premium'),
+                      child: const Text('Premium ve Krediler'),
                     ),
                   ],
                 ),
@@ -194,7 +184,7 @@ class _QuickActionRows extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _QuickActionCard(
-                title: 'Geçmiş',
+                title: 'Analiz Geçmişi',
                 subtitle: 'Önceki analizlerini ve favorilerini aç',
                 icon: Icons.history_rounded,
                 onTap: () => context.push('/history'),
@@ -290,6 +280,7 @@ class _DailyLimitCard extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(
                 child: _MetricTile(
@@ -308,6 +299,7 @@ class _DailyLimitCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(
                 child: _MetricTile(
@@ -326,6 +318,7 @@ class _DailyLimitCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(
                 child: _MetricTile(
@@ -356,19 +349,22 @@ class _MetricTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: Theme.of(context).textTheme.labelLarge),
-          const SizedBox(height: 8),
-          Text(value, style: Theme.of(context).textTheme.titleMedium),
-        ],
+    return SizedBox(
+      height: 82,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.72),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: Theme.of(context).textTheme.labelLarge),
+            Text(value, style: Theme.of(context).textTheme.titleMedium),
+          ],
+        ),
       ),
     );
   }

@@ -105,8 +105,13 @@ class AuthRepository {
     final localPlanType = await _cache.getLocalPlanType();
     final localSubscriptionStatus = await _cache.getLocalSubscriptionStatus();
     final localPremiumExpiry = await _cache.getLocalPremiumExpiry();
+    final localPremiumProductId = await _cache.getLocalPremiumProductId();
 
-    if (localPremiumExpiry != null && localPremiumExpiry.isBefore(DateTime.now())) {
+    final hasIncompletePremiumState =
+        (localPlanType == 'premium' || localSubscriptionStatus == 'active') &&
+        (localPremiumExpiry == null || localPremiumProductId == null);
+    if (hasIncompletePremiumState ||
+        (localPremiumExpiry != null && localPremiumExpiry.isBefore(DateTime.now()))) {
       await _cache.clearLocalPremiumState();
       final fallback = user.copyWith(
         planType: 'free',
