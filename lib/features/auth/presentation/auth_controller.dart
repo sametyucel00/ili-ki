@@ -45,9 +45,16 @@ class AuthController extends AsyncNotifier<AppUser?> {
     });
   }
 
-  Future<void> deleteData() => ref.read(authRepositoryProvider).deleteAllData();
+  Future<void> deleteData() async {
+    await ref.read(authRepositoryProvider).deleteAllData();
+    await refreshProfile();
+  }
 
-  Future<void> deleteAccount() => ref.read(authRepositoryProvider).deleteAccount();
+  Future<void> deleteAccount() async {
+    await ref.read(authRepositoryProvider).deleteAccount();
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() => ref.read(authRepositoryProvider).bootstrapSession());
+  }
 
   Future<void> updateDisplayName(String displayName) async {
     await ref.read(authRepositoryProvider).updateDisplayName(displayName);

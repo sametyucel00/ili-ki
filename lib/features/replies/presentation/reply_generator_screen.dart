@@ -87,7 +87,11 @@ class _ReplyGeneratorScreenState extends ConsumerState<ReplyGeneratorScreen> {
             child: Text(state.isLoading ? 'Üretiliyor...' : 'Cevapları Üret'),
           ),
           const SizedBox(height: 18),
-          if (state.isLoading) const SizedBox(height: 280, child: LoadingList()),
+          if (state.isLoading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 32),
+              child: Center(child: CircularProgressIndicator()),
+            ),
           if (state.hasError)
             isInsufficientCreditsError(state.error!)
                 ? EmptyStateView(
@@ -126,7 +130,10 @@ class _ReplyGeneratorScreenState extends ConsumerState<ReplyGeneratorScreen> {
                           OutlinedButton(
                             onPressed: () async {
                               await Clipboard.setData(ClipboardData(text: reply));
-                              await ref.read(analyticsServiceProvider).logEvent('result_copied', {'source': 'reply_generator'});
+                              await ref.read(analyticsServiceProvider).logEvent(
+                                'result_copied',
+                                {'source': 'reply_generator'},
+                              );
                             },
                             child: const Text('Kopyala'),
                           ),

@@ -4,7 +4,7 @@ String toUserFacingError(Object error) {
     return 'Bugünlük kullanım limitine ulaştın. Biraz sonra tekrar deneyebilir veya premium seçeneklerine bakabilirsin.';
   }
   if (text.contains('Insufficient credits')) {
-    return 'Yeterli kredin yok. Devam etmek için kredi alabilir veya premium’a geçebilirsin.';
+    return 'Yeterli kredin yok. Devam etmek için kredi alabilir veya premiuma geçebilirsin.';
   }
   if (text.contains('network') || text.contains('socket') || text.contains('internet')) {
     return 'İnternet bağlantısı gerekir. Bağlantını kontrol edip tekrar dene.';

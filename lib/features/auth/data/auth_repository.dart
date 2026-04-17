@@ -78,7 +78,7 @@ class AuthRepository {
       });
     }
     final fresh = await document.get();
-    return AppUser.fromMap(fresh.data()!);
+    return _mergeLocalState(AppUser.fromMap(fresh.data()!));
   }
 
   Future<void> markOnboardingCompleted() async {
@@ -98,7 +98,7 @@ class AuthRepository {
       throw const AppException('Oturum bulunamadı.', code: 'missing_session');
     }
     final snapshot = await _firestore.collection('users').doc(uid).get();
-    return AppUser.fromMap(snapshot.data()!);
+    return _mergeLocalState(AppUser.fromMap(snapshot.data()!));
   }
 
   Future<void> linkWithGoogle() async {
@@ -138,19 +138,31 @@ class AuthRepository {
       throw const AppException('Bağlanacak aktif oturum bulunamadı.', code: 'missing_session');
     }
     await user.linkWithCredential(credential);
-    await _functions.httpsCallable('grantLinkReward').call();
+    try {
+      await _functions.httpsCallable('grantLinkReward').call();
+    } catch (_) {
+      // Linking reward can be skipped in local-only mode.
+    }
     await _analytics.logEvent('account_link_completed', {'provider': provider});
     await _analytics.logEvent('sign_in_completed', {'provider': provider});
   }
 
   Future<void> deleteAllData() async {
-    await _functions.httpsCallable('deleteUserData').call();
+    try {
+      await _functions.httpsCallable('deleteUserData').call();
+    } catch (_) {
+      // Local-only mode: clearing cache is enough to reset the app state.
+    }
     await _cache.clearAll();
   }
 
   Future<void> deleteAccount() async {
     await deleteAllData();
-    await _auth.currentUser?.delete();
+    try {
+      await _auth.currentUser?.delete();
+    } catch (_) {
+      await _auth.signOut();
+    }
   }
 
   Future<void> signOutGuestAware() async {
@@ -166,5 +178,34 @@ class AuthRepository {
     await _firestore.collection('users').doc(uid).update({
       'displayName': displayName.trim(),
     });
+  }
+
+  Future<AppUser> _mergeLocalState(AppUser user) async {
+    final localCredits = await _cache.getLocalCreditBalance();
+    final localPlanType = await _cache.getLocalPlanType();
+    final localSubscriptionStatus = await _cache.getLocalSubscriptionStatus();
+
+    return AppUser(
+      uid: user.uid,
+      displayName: user.displayName,
+      email: user.email,
+      photoUrl: user.photoUrl,
+      provider: user.provider,
+      authType: user.authType,
+      isGuest: user.isGuest,
+      isLinked: user.isLinked,
+      createdAt: user.createdAt,
+      lastLoginAt: user.lastLoginAt,
+      linkedAt: user.linkedAt,
+      language: user.language,
+      planType: localPlanType ?? user.planType,
+      creditBalance: localCredits ?? user.creditBalance,
+      isOnboarded: user.isOnboarded,
+      subscriptionStatus: localSubscriptionStatus ?? user.subscriptionStatus,
+      subscriptionPlatform: user.subscriptionPlatform,
+      subscriptionExpiryDate: user.subscriptionExpiryDate,
+      notificationEnabled: user.notificationEnabled,
+      deletedAt: user.deletedAt,
+    );
   }
 }

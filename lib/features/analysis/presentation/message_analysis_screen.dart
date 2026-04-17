@@ -75,7 +75,11 @@ class _MessageAnalysisScreenState extends ConsumerState<MessageAnalysisScreen> {
             child: Text(state.isLoading ? 'Analiz ediliyor...' : 'Analiz Et'),
           ),
           const SizedBox(height: 18),
-          if (state.isLoading) const SizedBox(height: 280, child: LoadingList()),
+          if (state.isLoading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 32),
+              child: Center(child: CircularProgressIndicator()),
+            ),
           if (state.hasError)
             isInsufficientCreditsError(state.error!)
                 ? EmptyStateView(

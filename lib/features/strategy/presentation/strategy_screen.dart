@@ -62,7 +62,11 @@ class _StrategyScreenState extends ConsumerState<StrategyScreen> {
             child: Text(state.isLoading ? 'Yorumlanıyor...' : 'Analiz Et'),
           ),
           const SizedBox(height: 18),
-          if (state.isLoading) const SizedBox(height: 280, child: LoadingList()),
+          if (state.isLoading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 32),
+              child: Center(child: CircularProgressIndicator()),
+            ),
           if (state.hasError)
             isInsufficientCreditsError(state.error!)
                 ? EmptyStateView(

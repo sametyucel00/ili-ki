@@ -8,7 +8,7 @@ class RemoteConfigService {
 
   Future<AppConfigModel> initialize() async {
     await _remoteConfig.setDefaults(const {
-      'starter_credits': 3,
+      'starter_credits': 1,
       'free_daily_credits': 2,
       'link_bonus_credits': 3,
       'reply_generation_cost': 1,
@@ -21,7 +21,11 @@ class RemoteConfigService {
       'latest_prompt_version': 'v1',
       'maintenance_mode': false,
     });
-    await _remoteConfig.fetchAndActivate();
+    try {
+      await _remoteConfig.fetchAndActivate();
+    } catch (_) {
+      // Continue with defaults when Remote Config is not available.
+    }
     return AppConfigModel(
       starterCredits: _remoteConfig.getInt('starter_credits'),
       freeDailyCredits: _remoteConfig.getInt('free_daily_credits'),

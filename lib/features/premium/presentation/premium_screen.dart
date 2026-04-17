@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:iliski_kocu_ai/core/config/env.dart';
 import 'package:iliski_kocu_ai/core/services/providers.dart';
 import 'package:iliski_kocu_ai/features/auth/presentation/auth_controller.dart';
@@ -40,17 +39,6 @@ class PremiumScreen extends ConsumerWidget {
                       ? 'Premium aktif'
                       : 'Premium ile daha derin analiz ve daha yüksek limitler açılır.',
                 ),
-                if (user?.isGuest == true) ...[
-                  const SizedBox(height: 12),
-                  OutlinedButton(
-                    onPressed: () => context.push('/link-account'),
-                    child: Text(
-                      isAndroidSimulation
-                          ? 'Hesabını bağlamak istersen bunu daha sonra da yapabilirsin'
-                          : 'Satın alma öncesi hesabını bağla',
-                    ),
-                  ),
-                ],
                 const SizedBox(height: 12),
                 OutlinedButton(
                   onPressed: () => showModalBottomSheet<void>(
@@ -70,9 +58,9 @@ class PremiumScreen extends ConsumerWidget {
               children: [
                 const SectionHeader('Plan karşılaştırması'),
                 const SizedBox(height: 12),
-                const Text('• Misafir: sınırlı kredi, lokal geçmiş'),
-                const Text('• Bağlı kullanıcı: senkron, geri yükleme, bonus kredi'),
+                const Text('• Standart kullanım: cihaz içi devam, kredi ve geçmiş takibi'),
                 const Text('• Premium: daha yüksek limit, derin analiz, uzun geçmiş'),
+                const Text('• Kredi paketleri: hızlı şekilde ek analiz hakkı'),
                 if (isAndroidSimulation) ...[
                   const SizedBox(height: 12),
                   Text(
@@ -105,16 +93,6 @@ class PremiumScreen extends ConsumerWidget {
                           subtitle: Text(product.description),
                           trailing: FilledButton(
                             onPressed: () async {
-                              if (user?.isGuest == true && !isAndroidSimulation) {
-                                await ref.read(analyticsServiceProvider).logEvent(
-                                  'account_link_prompt_shown',
-                                  {'source': 'purchase_attempt'},
-                                );
-                                if (context.mounted) {
-                                  context.push('/link-account');
-                                }
-                                return;
-                              }
                               await ref.read(premiumRepositoryProvider).buyProduct(product);
                               await ref.read(authControllerProvider.notifier).refreshProfile();
                             },
@@ -133,7 +111,10 @@ class PremiumScreen extends ConsumerWidget {
                 ],
               ),
             ),
-            loading: () => const SizedBox(height: 220, child: LoadingList()),
+            loading: () => const SizedBox(
+              height: 220,
+              child: Center(child: CircularProgressIndicator()),
+            ),
             error: (error, _) => ErrorStateView(
               message: error.toString(),
               onRetry: () => ref.invalidate(productsProvider),

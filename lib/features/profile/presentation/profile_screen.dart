@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:iliski_kocu_ai/features/auth/presentation/auth_controller.dart';
 import 'package:iliski_kocu_ai/shared/widgets/common_widgets.dart';
 
@@ -10,6 +9,9 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authControllerProvider).valueOrNull;
+    final displayName =
+        user?.displayName?.trim().isNotEmpty == true ? user!.displayName! : 'İsimsiz kullanıcı';
+
     return AppScaffold(
       title: 'Profil ve Ayarlar',
       child: ListView(
@@ -19,11 +21,15 @@ class ProfileScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  user?.displayName?.trim().isNotEmpty == true ? user!.displayName! : 'İsimsiz kullanıcı',
+                  displayName,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 8),
-                Text(user?.email ?? 'Misafir oturumu'),
+                Text(
+                  user?.isPremium == true
+                      ? 'Premium aktif. Bu cihazda satın alımlar ve analiz geçmişi kullanılabilir.'
+                      : 'Hisle bu sürümde doğrudan kullanım odaklı çalışır. Giriş yapmadan devam edebilirsin.',
+                ),
                 const SizedBox(height: 14),
                 OutlinedButton(
                   onPressed: () => _showRenameDialog(context, ref, user?.displayName),
@@ -33,27 +39,30 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          ListTile(
-            tileColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: const Text('Hesabını bağla'),
-            subtitle: const Text('Geçmişini koru ve satın alımları geri yükle'),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () => context.push('/link-account'),
-          ),
-          const SizedBox(height: 16),
-          OutlinedButton(
+          OutlinedButton.icon(
             onPressed: () async {
               await ref.read(authControllerProvider.notifier).deleteData();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Veriler temizlendi.')),
+                );
+              }
             },
-            child: const Text('Tüm verileri sil'),
+            icon: const Icon(Icons.delete_sweep_outlined),
+            label: const Text('Tüm verileri sil'),
           ),
           const SizedBox(height: 10),
-          OutlinedButton(
+          OutlinedButton.icon(
             onPressed: () async {
               await ref.read(authControllerProvider.notifier).deleteAccount();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Oturum sıfırlandı.')),
+                );
+              }
             },
-            child: const Text('Hesabı sil'),
+            icon: const Icon(Icons.person_remove_outlined),
+            label: const Text('Hesabı sil'),
           ),
         ],
       ),

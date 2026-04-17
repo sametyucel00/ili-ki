@@ -23,7 +23,7 @@ import 'package:iliski_kocu_ai/shared/models/app_config_model.dart';
 final firebaseAuthProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
 final firestoreProvider = Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
 final firebaseFunctionsProvider = Provider<FirebaseFunctions>(
-  (ref) => FirebaseFunctions.instanceFor(region: 'europe-west1'),
+  (ref) => FirebaseFunctions.instance,
 );
 final firebaseAnalyticsProvider = Provider<FirebaseAnalytics>((ref) => FirebaseAnalytics.instance);
 final remoteConfigProvider = Provider<FirebaseRemoteConfig>((ref) => FirebaseRemoteConfig.instance);
@@ -84,6 +84,7 @@ final premiumRepositoryProvider = Provider<PremiumRepository>(
   (ref) => PremiumRepository(
     firestore: ref.watch(firestoreProvider),
     functions: ref.watch(firebaseFunctionsProvider),
+    cache: ref.watch(localCacheServiceProvider),
     purchases: ref.watch(purchasesServiceProvider),
     analytics: ref.watch(analyticsServiceProvider),
   ),
