@@ -11,6 +11,16 @@ class Env {
     defaultValue: true,
   );
 
+  static const aiBackendUrl = String.fromEnvironment(
+    'AI_BACKEND_URL',
+    defaultValue: '',
+  );
+
+  static const aiBackendTimeoutSeconds = int.fromEnvironment(
+    'AI_BACKEND_TIMEOUT_SECONDS',
+    defaultValue: 28,
+  );
+
   static const premiumProductIds = <String>[
     'com.hisle.app.premium.monthly',
     'com.hisle.app.premium.yearly',

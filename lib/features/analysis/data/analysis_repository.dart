@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:iliski_kocu_ai/core/errors/app_exception.dart';
+import 'package:iliski_kocu_ai/core/services/ai_backend_service.dart';
 import 'package:iliski_kocu_ai/core/services/analytics_service.dart';
 import 'package:iliski_kocu_ai/core/services/local_cache_service.dart';
 import 'package:iliski_kocu_ai/core/services/remote_config_service.dart';
@@ -12,13 +13,16 @@ class AnalysisRepository {
     required LocalCacheService cache,
     required AnalyticsService analytics,
     required RemoteConfigService config,
+    required AiBackendService aiBackend,
   })  : _cache = cache,
         _analytics = analytics,
-        _config = config;
+        _config = config,
+        _aiBackend = aiBackend;
 
   final LocalCacheService _cache;
   final AnalyticsService _analytics;
   final RemoteConfigService _config;
+  final AiBackendService _aiBackend;
   final Uuid _uuid = const Uuid();
 
   Future<AnalysisRecord> createMessageAnalysis({
@@ -116,6 +120,59 @@ class AnalysisRepository {
     await _checkDailyLimit();
     await _consumeLocalCredits(1);
 
+    final isPremium = await _isPremiumActive();
+    final remote = await _aiBackend.createMessageAnalysis(
+      message: message,
+      context: context,
+      relationshipType: relationshipType,
+      isPremium: isPremium,
+    );
+    if (remote != null) {
+      final now = DateTime.now();
+      final record = AnalysisRecord(
+        id: _uuid.v4(),
+        uid: 'local_user',
+        type: AnalysisType.messageAnalysis,
+        inputText: message,
+        contextText: context,
+        relationshipType: relationshipType,
+        tone: null,
+        responseLength: null,
+        emojiPreference: null,
+        aiSummary: _stringValue(remote['summary'],
+            fallback: 'Mesaj dengeli şekilde yorumlandı.'),
+        aiIntent: _nullableString(remote['intent']),
+        aiRiskFlags: _stringList(remote['riskFlags']),
+        aiSuggestedAction: _stringValue(
+          remote['recommendedAction'],
+          fallback:
+              'Kısa, net ve sakin bir cevap vermek daha güvenli olabilir.',
+        ),
+        aiReplyOptions: _stringList(remote['replyOptions']).take(3).toList(),
+        rawModelOutput: remote,
+        creditsUsed: 1,
+        isFavorite: false,
+        createdAt: now,
+        updatedAt: now,
+        neutralityNote: _nullableString(remote['neutralityNote']) ??
+            'Bu yorum kesinlik iddiası taşımaz; olası bir okuma sunar.',
+        clarityLevel: _nullableString(remote['clarityLevel']),
+        interestLevel: _nullableString(remote['interestLevel']),
+        avoidNow: const [],
+        nextSteps: const [],
+        likelyDynamics: const [],
+        optionalMessage: null,
+      );
+      await _persistCache(record);
+      final count = await _cache.incrementCompletedAnalysisCount();
+      await _analytics.logEvent('analysis_completed', {
+        'type': 'message_analysis',
+        'completed_count': count,
+        'mode': 'remote',
+      });
+      return record;
+    }
+
     final profile = _messageProfile(message, context);
     final now = DateTime.now();
     final record = AnalysisRecord(
@@ -167,6 +224,59 @@ class AnalysisRepository {
     await _checkDailyLimit();
     await _consumeLocalCredits(1);
 
+    final isPremium = await _isPremiumActive();
+    final remote = await _aiBackend.createReplyGeneration(
+      message: message,
+      context: context,
+      tone: tone,
+      responseLength: responseLength,
+      emojiPreference: emojiPreference,
+      isPremium: isPremium,
+    );
+    if (remote != null) {
+      final now = DateTime.now();
+      final record = AnalysisRecord(
+        id: _uuid.v4(),
+        uid: 'local_user',
+        type: AnalysisType.replyGeneration,
+        inputText: message,
+        contextText: context,
+        relationshipType: null,
+        tone: tone,
+        responseLength: responseLength,
+        emojiPreference: emojiPreference,
+        aiSummary:
+            '$tone tonda $responseLength uzunlukta cevap seçenekleri hazırlandı.',
+        aiIntent: null,
+        aiRiskFlags: const [],
+        aiSuggestedAction: _stringValue(
+          remote['recommendedAction'],
+          fallback:
+              'En doğal gelen cevabı seçip kendi konuşma tarzına göre küçükçe düzenleyebilirsin.',
+        ),
+        aiReplyOptions: _stringList(remote['replyOptions']).take(3).toList(),
+        rawModelOutput: remote,
+        creditsUsed: 1,
+        isFavorite: false,
+        createdAt: now,
+        updatedAt: now,
+        neutralityNote: null,
+        clarityLevel: null,
+        interestLevel: null,
+        avoidNow: const [],
+        nextSteps: const [],
+        likelyDynamics: const [],
+        optionalMessage: null,
+      );
+      await _persistCache(record);
+      final count = await _cache.incrementCompletedAnalysisCount();
+      await _analytics.logEvent('reply_generated', {
+        'completed_count': count,
+        'mode': 'remote',
+      });
+      return record;
+    }
+
     final options =
         _replyOptions(message, tone, responseLength, emojiPreference);
     final now = DateTime.now();
@@ -215,6 +325,55 @@ class AnalysisRepository {
   }) async {
     await _checkDailyLimit();
     await _consumeLocalCredits(2);
+
+    final isPremium = await _isPremiumActive();
+    final remote = await _aiBackend.createSituationStrategy(
+      situation: situation,
+      relationshipType: relationshipType,
+      isPremium: isPremium,
+    );
+    if (remote != null) {
+      final now = DateTime.now();
+      final record = AnalysisRecord(
+        id: _uuid.v4(),
+        uid: 'local_user',
+        type: AnalysisType.situationStrategy,
+        inputText: situation,
+        contextText: null,
+        relationshipType: relationshipType,
+        tone: null,
+        responseLength: null,
+        emojiPreference: null,
+        aiSummary: _stringValue(remote['summary'],
+            fallback: 'Durum dengeli şekilde özetlendi.'),
+        aiIntent: null,
+        aiRiskFlags: _stringList(remote['riskFlags']),
+        aiSuggestedAction: _stringValue(
+          remote['recommendedAction'],
+          fallback: 'Önce tek bir net hedef belirleyip sakin bir adım seç.',
+        ),
+        aiReplyOptions: const [],
+        rawModelOutput: remote,
+        creditsUsed: 2,
+        isFavorite: false,
+        createdAt: now,
+        updatedAt: now,
+        neutralityNote: null,
+        clarityLevel: null,
+        interestLevel: null,
+        avoidNow: _stringList(remote['avoidNow']),
+        nextSteps: _stringList(remote['nextSteps']),
+        likelyDynamics: _stringList(remote['likelyDynamics']),
+        optionalMessage: _nullableString(remote['optionalMessage']),
+      );
+      await _persistCache(record);
+      final count = await _cache.incrementCompletedAnalysisCount();
+      await _analytics.logEvent('strategy_generated', {
+        'completed_count': count,
+        'mode': 'remote',
+      });
+      return record;
+    }
 
     final lower = situation.toLowerCase();
     final isCold = lower.contains('soğuk') ||
@@ -483,6 +642,31 @@ class AnalysisRepository {
     final planType = await _cache.getLocalPlanType();
     final status = await _cache.getLocalSubscriptionStatus();
     return (planType == 'premium' || status == 'active') && expiry != null;
+  }
+
+  String _stringValue(dynamic value, {required String fallback}) {
+    if (value is String && value.trim().isNotEmpty) {
+      return value.trim();
+    }
+    return fallback;
+  }
+
+  String? _nullableString(dynamic value) {
+    if (value is String && value.trim().isNotEmpty) {
+      return value.trim();
+    }
+    return null;
+  }
+
+  List<String> _stringList(dynamic value) {
+    if (value is! List) {
+      return const [];
+    }
+    return value
+        .whereType<Object>()
+        .map((item) => item.toString().trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
   }
 
   void _requireText(String value) {

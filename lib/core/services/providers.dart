@@ -1,5 +1,6 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:iliski_kocu_ai/core/services/ai_backend_service.dart';
 import 'package:iliski_kocu_ai/core/services/analytics_service.dart';
 import 'package:iliski_kocu_ai/core/services/connectivity_service.dart';
 import 'package:iliski_kocu_ai/core/services/local_cache_service.dart';
@@ -20,6 +21,8 @@ final localCacheServiceProvider =
     Provider<LocalCacheService>((ref) => LocalCacheService());
 final analyticsServiceProvider =
     Provider<AnalyticsService>((ref) => const AnalyticsService());
+final aiBackendServiceProvider =
+    Provider<AiBackendService>((ref) => AiBackendService());
 final remoteConfigServiceProvider =
     Provider<RemoteConfigService>((ref) => const RemoteConfigService());
 final connectivityServiceProvider = Provider<ConnectivityService>(
@@ -49,6 +52,7 @@ final analysisRepositoryProvider = Provider<AnalysisRepository>(
     cache: ref.watch(localCacheServiceProvider),
     analytics: ref.watch(analyticsServiceProvider),
     config: ref.watch(remoteConfigServiceProvider),
+    aiBackend: ref.watch(aiBackendServiceProvider),
   ),
 );
 

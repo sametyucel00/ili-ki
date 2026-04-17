@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - "site/**"
+      - "netlify/functions/**"
       - "netlify.toml"
 
 jobs:
@@ -15,17 +16,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy to Netlify
-        uses: nwtgck/actions-netlify@v3.0
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          publish-dir: "./site"
-          production-branch: main
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: "Deploy legal hub"
-          production-deploy: true
-          enable-pull-request-comment: false
-          enable-commit-comment: false
-          overwrites-pull-request-comment: false
+          node-version: "20"
+
+      - name: Deploy site and functions to Netlify
+        run: |
+          npm install -g netlify-cli
+          netlify deploy --prod --dir=site --functions=netlify/functions --message="Deploy Hisle site and AI function"
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}

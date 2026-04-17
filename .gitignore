@@ -7,9 +7,12 @@
 *.iml
 build/
 android/.gradle/
+android/.kotlin/
+android/hs_err_pid*.log
 android/local.properties
 coverage/
 pubspec.lock
 functions/lib/
 functions/node_modules/
 functions/.env*
+netlify/functions/.env*

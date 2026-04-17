@@ -50,10 +50,10 @@ jobs:
         run: flutter pub get
 
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --release --dart-define=AI_BACKEND_URL="${{ secrets.AI_BACKEND_URL }}"
 
       - name: Build App Bundle
-        run: flutter build appbundle --release
+        run: flutter build appbundle --release --dart-define=AI_BACKEND_URL="${{ secrets.AI_BACKEND_URL }}"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
