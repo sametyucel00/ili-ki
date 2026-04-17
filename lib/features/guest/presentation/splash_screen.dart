@@ -1,20 +1,42 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iliski_kocu_ai/core/constants/app_strings.dart';
 import 'package:iliski_kocu_ai/features/auth/presentation/auth_controller.dart';
 
-class SplashScreen extends ConsumerWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends ConsumerState<SplashScreen> {
+  late final DateTime _startedAt;
+
+  @override
+  void initState() {
+    super.initState();
+    _startedAt = DateTime.now();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     ref.listen(authControllerProvider, (_, next) {
       next.whenData((user) {
         if (user == null) {
           return;
         }
-        context.go(user.isOnboarded ? '/home' : '/onboarding');
+        final elapsed = DateTime.now().difference(_startedAt);
+        final remaining = const Duration(milliseconds: 1200) - elapsed;
+        final target = user.isOnboarded ? '/home' : '/onboarding';
+        Timer(remaining.isNegative ? Duration.zero : remaining, () {
+          if (mounted) {
+            context.go(target);
+          }
+        });
       });
     });
 
