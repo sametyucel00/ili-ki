@@ -10,7 +10,6 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 
 final productsProvider =
     FutureProvider.autoDispose<List<ProductDetails>>((ref) async {
-  ref.read(premiumRepositoryProvider).attachPurchaseListener();
   return ref.read(premiumRepositoryProvider).loadProducts();
 });
 
@@ -24,11 +23,35 @@ final purchaseHistoryProvider =
   return ref.read(premiumRepositoryProvider).loadPurchaseHistory();
 });
 
-class PremiumScreen extends ConsumerWidget {
+class PremiumScreen extends ConsumerStatefulWidget {
   const PremiumScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PremiumScreen> createState() => _PremiumScreenState();
+}
+
+class _PremiumScreenState extends ConsumerState<PremiumScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(premiumRepositoryProvider).attachPurchaseListener(
+        onApplied: (feedback) async {
+          await ref.read(authControllerProvider.notifier).refreshProfile();
+          ref.invalidate(premiumProductIdProvider);
+          ref.invalidate(purchaseHistoryProvider);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(feedback.message)),
+            );
+          }
+        },
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final offerings = ref.watch(productsProvider);
     final history = ref.watch(purchaseHistoryProvider);
     final config = ref.watch(appConfigProvider).valueOrNull;
@@ -188,12 +211,14 @@ class _PackagesCard extends ConsumerWidget {
                             final feedback = await ref
                                 .read(premiumRepositoryProvider)
                                 .buyProduct(product);
-                            await ref
-                                .read(authControllerProvider.notifier)
-                                .refreshProfile();
-                            ref.invalidate(productsProvider);
-                            ref.invalidate(premiumProductIdProvider);
-                            ref.invalidate(purchaseHistoryProvider);
+                            if (feedback.didChangeEntitlement) {
+                              await ref
+                                  .read(authControllerProvider.notifier)
+                                  .refreshProfile();
+                              ref.invalidate(productsProvider);
+                              ref.invalidate(premiumProductIdProvider);
+                              ref.invalidate(purchaseHistoryProvider);
+                            }
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text(feedback.message)),
@@ -212,8 +237,6 @@ class _PackagesCard extends ConsumerWidget {
             onPressed: () async {
               final feedback =
                   await ref.read(premiumRepositoryProvider).restore();
-              await ref.read(authControllerProvider.notifier).refreshProfile();
-              ref.invalidate(purchaseHistoryProvider);
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text(feedback.message)),

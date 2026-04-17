@@ -68,9 +68,14 @@ class PremiumRepository {
         );
   }
 
-  void attachPurchaseListener() {
+  void attachPurchaseListener({
+    Future<void> Function(PurchaseFeedback feedback)? onApplied,
+  }) {
     _purchases.attachPurchaseListener((purchase) async {
-      await _applyLocalPurchase(purchase.productID);
+      final feedback = await _applyLocalPurchase(purchase.productID);
+      if (onApplied != null) {
+        await onApplied(feedback);
+      }
     });
   }
 
