@@ -47,23 +47,12 @@ class PremiumRepository {
   final PurchasesService _purchases;
   final AnalyticsService _analytics;
 
-  bool get useAndroidPurchaseSimulation =>
+  bool get useLocalPurchaseSimulation =>
       _purchases.useAndroidPurchaseSimulation;
 
   Future<List<ProductDetails>> loadProducts() async {
-    if (useAndroidPurchaseSimulation) {
-      final available = await _purchases.isAvailable().timeout(
-            const Duration(seconds: 3),
-            onTimeout: () => false,
-          );
-      if (!available) {
-        return _fallbackProducts;
-      }
-      final storeProducts = await _purchases.getProducts().timeout(
-            const Duration(seconds: 6),
-            onTimeout: () => <ProductDetails>[],
-          );
-      return storeProducts.isEmpty ? _fallbackProducts : storeProducts;
+    if (useLocalPurchaseSimulation) {
+      return _fallbackProducts;
     }
 
     final available = await _purchases.isAvailable().timeout(
@@ -86,9 +75,9 @@ class PremiumRepository {
   }
 
   Future<PurchaseFeedback> restore() async {
-    if (useAndroidPurchaseSimulation) {
+    if (useLocalPurchaseSimulation) {
       await _analytics
-          .logEvent('purchase_restored', {'mode': 'android_simulation'});
+          .logEvent('purchase_restored', {'mode': 'local_simulation'});
       return const PurchaseFeedback(message: 'Satın alımlar kontrol edildi.');
     }
 
@@ -99,15 +88,15 @@ class PremiumRepository {
   }
 
   Future<PurchaseFeedback> buyProduct(ProductDetails product) async {
-    if (useAndroidPurchaseSimulation) {
+    if (useLocalPurchaseSimulation) {
       await _analytics.logEvent('purchase_started', {
         'product_id': product.id,
-        'mode': 'android_simulation',
+        'mode': 'local_simulation',
       });
       final feedback = await _applyLocalPurchase(product.id);
       await _analytics.logEvent('purchase_completed', {
         'product_id': product.id,
-        'mode': 'android_simulation',
+        'mode': 'local_simulation',
       });
       return feedback;
     }

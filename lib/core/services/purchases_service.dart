@@ -11,7 +11,7 @@ class PurchasesService {
   final InAppPurchase _inAppPurchase;
   StreamSubscription<List<PurchaseDetails>>? _subscription;
 
-  bool get useAndroidPurchaseSimulation => Env.useAndroidPurchaseSimulation;
+  bool get useAndroidPurchaseSimulation => Env.useLocalPurchaseSimulation;
 
   Future<bool> isAvailable() => _inAppPurchase.isAvailable();
 
@@ -23,6 +23,9 @@ class PurchasesService {
 
   void attachPurchaseListener(
       Future<void> Function(PurchaseDetails) onPurchase) {
+    if (useAndroidPurchaseSimulation) {
+      return;
+    }
     _subscription ??= _inAppPurchase.purchaseStream.listen((purchases) async {
       for (final purchase in purchases) {
         if (purchase.status == PurchaseStatus.purchased ||

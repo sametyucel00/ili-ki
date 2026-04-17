@@ -30,4 +30,8 @@ class Env {
 
   static bool get useAndroidPurchaseSimulation =>
       enableAndroidPurchaseSimulation && Platform.isAndroid;
+
+  static bool get useLocalPurchaseSimulation =>
+      enableAndroidPurchaseSimulation &&
+      (Platform.isAndroid || Platform.isWindows);
 }
