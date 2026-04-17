@@ -15,10 +15,10 @@ class AccountLinkingScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SectionHeader('Bu sürümde giriş gerekmiyor'),
+                SectionHeader('Hisle doğrudan devam eder'),
                 SizedBox(height: 12),
                 Text(
-                  'Hisle şu anda doğrudan devam mantığıyla çalışıyor. Premium ve kredi satın alma akışları yine kullanılabilir.',
+                  'Bu sürümde hesap işlemleri kapalıdır. Premium, krediler ve geçmiş bu cihaz içinde çalışmaya devam eder.',
                 ),
               ],
             ),

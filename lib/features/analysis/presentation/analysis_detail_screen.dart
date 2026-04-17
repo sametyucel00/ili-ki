@@ -18,6 +18,7 @@ class AnalysisDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = ref.watch(analysisDetailProvider(analysisId));
+
     return AppScaffold(
       title: 'Analiz Detayı',
       child: detail.when(
@@ -28,13 +29,14 @@ class AnalysisDetailScreen extends ConsumerWidget {
               description: 'Bu kayıt silinmiş olabilir.',
             );
           }
+
           return ListView(
             children: [
               PrimaryCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SectionHeader('Orijinal giriş'),
+                    const SectionHeader('Orijinal metin'),
                     const SizedBox(height: 12),
                     Text(item.inputText),
                     if ((item.contextText ?? '').isNotEmpty) ...[
@@ -112,13 +114,19 @@ class AnalysisDetailScreen extends ConsumerWidget {
                   OutlinedButton(
                     onPressed: () async {
                       await Clipboard.setData(ClipboardData(text: item.aiSummary));
-                      await ref.read(analyticsServiceProvider).logEvent('result_copied', {'source': 'detail'});
+                      await ref.read(analyticsServiceProvider).logEvent(
+                        'result_copied',
+                        {'source': 'detail'},
+                      );
                     },
                     child: const Text('Özeti Kopyala'),
                   ),
                   OutlinedButton(
                     onPressed: () async {
-                      await ref.read(analysisRepositoryProvider).toggleFavorite(analysisId, !item.isFavorite);
+                      await ref.read(analysisRepositoryProvider).toggleFavorite(
+                            analysisId,
+                            !item.isFavorite,
+                          );
                       ref.invalidate(analysisDetailProvider(analysisId));
                     },
                     child: Text(item.isFavorite ? 'Favoriden Çıkar' : 'Favorile'),

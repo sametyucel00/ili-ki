@@ -28,7 +28,7 @@ class ProfileScreen extends ConsumerWidget {
                 Text(
                   user?.isPremium == true
                       ? 'Premium aktif. Bu cihazda satın alımlar ve analiz geçmişi kullanılabilir.'
-                      : 'Hisle bu sürümde doğrudan kullanım odaklı çalışır. Giriş yapmadan devam edebilirsin.',
+                      : 'Hisle bu sürümde doğrudan kullanım odaklı çalışır. Tüm kullanım verileri bu cihazda tutulur.',
                 ),
                 const SizedBox(height: 14),
                 OutlinedButton(
@@ -57,7 +57,7 @@ class ProfileScreen extends ConsumerWidget {
               await ref.read(authControllerProvider.notifier).deleteAccount();
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Oturum sıfırlandı.')),
+                  const SnackBar(content: Text('Yeni bir yerel profil oluşturuldu.')),
                 );
               }
             },

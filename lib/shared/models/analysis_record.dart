@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 enum AnalysisType { messageAnalysis, replyGeneration, situationStrategy }
 
 class AnalysisRecord {
@@ -78,8 +76,8 @@ class AnalysisRecord {
       'rawModelOutput': rawModelOutput,
       'creditsUsed': creditsUsed,
       'isFavorite': isFavorite,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'updatedAt': Timestamp.fromDate(updatedAt),
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
       'neutralityNote': neutralityNote,
       'clarityLevel': clarityLevel,
       'interestLevel': interestLevel,
@@ -92,9 +90,6 @@ class AnalysisRecord {
 
   factory AnalysisRecord.fromMap(Map<String, dynamic> map) {
     DateTime ts(dynamic value) {
-      if (value is Timestamp) {
-        return value.toDate();
-      }
       if (value is String) {
         return DateTime.tryParse(value) ?? DateTime.now();
       }
@@ -102,8 +97,8 @@ class AnalysisRecord {
     }
 
     return AnalysisRecord(
-      id: map['id'] as String,
-      uid: map['uid'] as String,
+      id: (map['id'] as String?) ?? '',
+      uid: (map['uid'] as String?) ?? '',
       type: AnalysisType.values.firstWhere(
         (value) => value.name == map['type'],
         orElse: () => AnalysisType.messageAnalysis,

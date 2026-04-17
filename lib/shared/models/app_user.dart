@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class AppUser {
   const AppUser({
     required this.uid,
@@ -47,6 +45,52 @@ class AppUser {
 
   bool get isPremium => planType == 'premium' || subscriptionStatus == 'active';
 
+  AppUser copyWith({
+    String? uid,
+    String? displayName,
+    String? email,
+    String? photoUrl,
+    String? provider,
+    String? authType,
+    bool? isGuest,
+    bool? isLinked,
+    DateTime? createdAt,
+    DateTime? lastLoginAt,
+    DateTime? linkedAt,
+    String? language,
+    String? planType,
+    int? creditBalance,
+    bool? isOnboarded,
+    String? subscriptionStatus,
+    String? subscriptionPlatform,
+    DateTime? subscriptionExpiryDate,
+    bool? notificationEnabled,
+    DateTime? deletedAt,
+  }) {
+    return AppUser(
+      uid: uid ?? this.uid,
+      displayName: displayName ?? this.displayName,
+      email: email ?? this.email,
+      photoUrl: photoUrl ?? this.photoUrl,
+      provider: provider ?? this.provider,
+      authType: authType ?? this.authType,
+      isGuest: isGuest ?? this.isGuest,
+      isLinked: isLinked ?? this.isLinked,
+      createdAt: createdAt ?? this.createdAt,
+      lastLoginAt: lastLoginAt ?? this.lastLoginAt,
+      linkedAt: linkedAt ?? this.linkedAt,
+      language: language ?? this.language,
+      planType: planType ?? this.planType,
+      creditBalance: creditBalance ?? this.creditBalance,
+      isOnboarded: isOnboarded ?? this.isOnboarded,
+      subscriptionStatus: subscriptionStatus ?? this.subscriptionStatus,
+      subscriptionPlatform: subscriptionPlatform ?? this.subscriptionPlatform,
+      subscriptionExpiryDate: subscriptionExpiryDate ?? this.subscriptionExpiryDate,
+      notificationEnabled: notificationEnabled ?? this.notificationEnabled,
+      deletedAt: deletedAt ?? this.deletedAt,
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'uid': uid,
@@ -57,28 +101,23 @@ class AppUser {
       'authType': authType,
       'isGuest': isGuest,
       'isLinked': isLinked,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'lastLoginAt': Timestamp.fromDate(lastLoginAt),
-      'linkedAt': linkedAt == null ? null : Timestamp.fromDate(linkedAt!),
+      'createdAt': createdAt.toIso8601String(),
+      'lastLoginAt': lastLoginAt.toIso8601String(),
+      'linkedAt': linkedAt?.toIso8601String(),
       'language': language,
       'planType': planType,
       'creditBalance': creditBalance,
       'isOnboarded': isOnboarded,
       'subscriptionStatus': subscriptionStatus,
       'subscriptionPlatform': subscriptionPlatform,
-      'subscriptionExpiryDate': subscriptionExpiryDate == null
-          ? null
-          : Timestamp.fromDate(subscriptionExpiryDate!),
+      'subscriptionExpiryDate': subscriptionExpiryDate?.toIso8601String(),
       'notificationEnabled': notificationEnabled,
-      'deletedAt': deletedAt == null ? null : Timestamp.fromDate(deletedAt!),
+      'deletedAt': deletedAt?.toIso8601String(),
     };
   }
 
   factory AppUser.fromMap(Map<String, dynamic> map) {
     DateTime? ts(dynamic value) {
-      if (value is Timestamp) {
-        return value.toDate();
-      }
       if (value is String) {
         return DateTime.tryParse(value);
       }
@@ -86,13 +125,13 @@ class AppUser {
     }
 
     return AppUser(
-      uid: map['uid'] as String,
+      uid: (map['uid'] as String?) ?? '',
       displayName: map['displayName'] as String?,
       email: map['email'] as String?,
       photoUrl: map['photoURL'] as String?,
-      provider: (map['provider'] as String?) ?? 'anonymous',
-      authType: (map['authType'] as String?) ?? 'anonymous',
-      isGuest: (map['isGuest'] as bool?) ?? true,
+      provider: (map['provider'] as String?) ?? 'local',
+      authType: (map['authType'] as String?) ?? 'local',
+      isGuest: (map['isGuest'] as bool?) ?? false,
       isLinked: (map['isLinked'] as bool?) ?? false,
       createdAt: ts(map['createdAt']) ?? DateTime.now(),
       lastLoginAt: ts(map['lastLoginAt']) ?? DateTime.now(),

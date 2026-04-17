@@ -9,6 +9,7 @@ class LocalCacheService {
   static const _creditBalanceKey = 'local_credit_balance';
   static const _planTypeKey = 'local_plan_type';
   static const _subscriptionStatusKey = 'local_subscription_status';
+  static const _userProfileKey = 'local_user_profile';
 
   Future<List<Map<String, dynamic>>> readCachedAnalyses() async {
     final prefs = await SharedPreferences.getInstance();
@@ -34,6 +35,20 @@ class LocalCacheService {
   Future<void> clearAll() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
+  }
+
+  Future<Map<String, dynamic>?> readUserProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_userProfileKey);
+    if (raw == null || raw.isEmpty) {
+      return null;
+    }
+    return jsonDecode(raw) as Map<String, dynamic>;
+  }
+
+  Future<void> writeUserProfile(Map<String, dynamic> data) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userProfileKey, jsonEncode(data));
   }
 
   Future<int> getCompletedAnalysisCount() async {

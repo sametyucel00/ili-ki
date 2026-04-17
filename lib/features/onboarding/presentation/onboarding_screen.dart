@@ -36,9 +36,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     ),
     _OnboardingItem(
       step: '04',
-      title: 'Önce dene, hesabını sonra bağla',
+      title: 'Doğrudan devam et',
       description:
-          'İlk açılışta giriş zorunlu değildir. Uygulamayı deneyebilir, istersen daha sonra hesabını bağlayıp geçmişini koruyabilirsin.',
+          'Hisle bu sürümde yerel olarak çalışır. Analizlerin, kredilerin ve ayarların bu cihazda saklanır.',
     ),
   ];
 
@@ -140,17 +140,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   }
                 },
                 child: const Text('Hemen Dene'),
-              ),
-              const SizedBox(height: 12),
-              Center(
-                child: Text(
-                  'Hesabını daha sonra bağlayabilirsin.',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.78),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
               ),
             ],
           ),

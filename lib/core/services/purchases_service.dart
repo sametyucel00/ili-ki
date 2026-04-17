@@ -43,7 +43,7 @@ class PurchasesService {
   Future<void> buy(ProductDetails product) async {
     await _analytics.logEvent('purchase_started', {'product_id': product.id});
     final param = PurchaseParam(productDetails: product);
-    if (product.id.startsWith('credits_')) {
+    if (product.id.contains('.credits.')) {
       await _inAppPurchase.buyConsumable(purchaseParam: param);
     } else {
       await _inAppPurchase.buyNonConsumable(purchaseParam: param);

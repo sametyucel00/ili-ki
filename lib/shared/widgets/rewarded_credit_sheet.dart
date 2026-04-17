@@ -18,7 +18,6 @@ class _RewardedCreditSheetState extends ConsumerState<RewardedCreditSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(authControllerProvider).valueOrNull;
     return Padding(
       padding: EdgeInsets.only(
         left: 20,
@@ -41,7 +40,7 @@ class _RewardedCreditSheetState extends ConsumerState<RewardedCreditSheet> {
               children: [
                 Text('1 reklam izle → 1 analiz kazan'),
                 SizedBox(height: 8),
-                Text('Reklam izlemek tamamen isteğe bağlıdır. Ödül kazanınca kredi hesabına işlenir.'),
+                Text('Reklam izlemek tamamen isteğe bağlıdır. Ödül kazanılınca kredi hesabına işlenir.'),
               ],
             ),
           ),
@@ -83,16 +82,6 @@ class _RewardedCreditSheetState extends ConsumerState<RewardedCreditSheet> {
             },
             child: const Text('Kredi ve premium seçeneklerini gör'),
           ),
-          if (user?.isGuest == true) ...[
-            const SizedBox(height: 10),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                context.push('/link-account');
-              },
-              child: const Text('Hesabını bağla, kredilerin kaybolmasın'),
-            ),
-          ],
         ],
       ),
     );

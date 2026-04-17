@@ -1,34 +1,19 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:iliski_kocu_ai/core/errors/app_exception.dart';
 import 'package:iliski_kocu_ai/core/services/analytics_service.dart';
 import 'package:iliski_kocu_ai/core/services/local_cache_service.dart';
 import 'package:iliski_kocu_ai/shared/models/analysis_record.dart';
+import 'package:uuid/uuid.dart';
 
 class AnalysisRepository {
   AnalysisRepository({
-    required FirebaseFirestore firestore,
-    required FirebaseFunctions functions,
     required LocalCacheService cache,
     required AnalyticsService analytics,
-  })  : _firestore = firestore,
-        _functions = functions,
-        _cache = cache,
+  })  : _cache = cache,
         _analytics = analytics;
 
-  final FirebaseFirestore _firestore;
-  final FirebaseFunctions _functions;
   final LocalCacheService _cache;
   final AnalyticsService _analytics;
-
-  String get _uid {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) {
-      throw const AppException('Aktif kullanıcı bulunamadı.', code: 'missing_user');
-    }
-    return uid;
-  }
+  final Uuid _uuid = const Uuid();
 
   Future<AnalysisRecord> createMessageAnalysis({
     required String message,
@@ -36,27 +21,11 @@ class AnalysisRepository {
     String? relationshipType,
   }) async {
     await _analytics.logEvent('analysis_started', {'type': 'message_analysis'});
-    try {
-      final result = await _functions.httpsCallable('createAnalysis').call({
-        'inputText': message,
-        'contextText': context,
-        'relationshipType': relationshipType,
-      });
-      final record = AnalysisRecord.fromMap(Map<String, dynamic>.from(result.data as Map));
-      await _persistCache(record);
-      final count = await _cache.incrementCompletedAnalysisCount();
-      await _analytics.logEvent('analysis_completed', {
-        'type': 'message_analysis',
-        'completed_count': count,
-      });
-      return record;
-    } catch (_) {
-      return _buildLocalMessageAnalysis(
-        message: message,
-        context: context,
-        relationshipType: relationshipType,
-      );
-    }
+    return _buildLocalMessageAnalysis(
+      message: message,
+      context: context,
+      relationshipType: relationshipType,
+    );
   }
 
   Future<AnalysisRecord> createReplyGeneration({
@@ -66,68 +35,29 @@ class AnalysisRepository {
     required String responseLength,
     required bool emojiPreference,
   }) async {
-    try {
-      final result = await _functions.httpsCallable('generateReplies').call({
-        'inputText': message,
-        'contextText': context,
-        'tone': tone,
-        'responseLength': responseLength,
-        'emojiPreference': emojiPreference,
-      });
-      final record = AnalysisRecord.fromMap(Map<String, dynamic>.from(result.data as Map));
-      await _persistCache(record);
-      final count = await _cache.incrementCompletedAnalysisCount();
-      await _analytics.logEvent('reply_generated', {'completed_count': count});
-      return record;
-    } catch (_) {
-      return _buildLocalReplyGeneration(
-        message: message,
-        context: context,
-        tone: tone,
-        responseLength: responseLength,
-        emojiPreference: emojiPreference,
-      );
-    }
+    return _buildLocalReplyGeneration(
+      message: message,
+      context: context,
+      tone: tone,
+      responseLength: responseLength,
+      emojiPreference: emojiPreference,
+    );
   }
 
   Future<AnalysisRecord> createSituationStrategy({
     required String situation,
     String? relationshipType,
   }) async {
-    try {
-      final result = await _functions.httpsCallable('createSituationStrategy').call({
-        'inputText': situation,
-        'relationshipType': relationshipType,
-      });
-      final record = AnalysisRecord.fromMap(Map<String, dynamic>.from(result.data as Map));
-      await _persistCache(record);
-      final count = await _cache.incrementCompletedAnalysisCount();
-      await _analytics.logEvent('strategy_generated', {'completed_count': count});
-      return record;
-    } catch (_) {
-      return _buildLocalSituationStrategy(
-        situation: situation,
-        relationshipType: relationshipType,
-      );
-    }
+    return _buildLocalSituationStrategy(
+      situation: situation,
+      relationshipType: relationshipType,
+    );
   }
 
   Future<void> _persistCache(AnalysisRecord record) async {
     final items = await _cache.readCachedAnalyses();
-    final next = [record.toMap(), ...items].take(25).toList();
+    final next = [record.toMap(), ...items].take(50).toList();
     await _cache.writeCachedAnalyses(next);
-  }
-
-  Stream<List<AnalysisRecord>> watchRecentAnalyses() {
-    return _firestore
-        .collection('analyses')
-        .where('uid', isEqualTo: _uid)
-        .orderBy('createdAt', descending: true)
-        .limit(20)
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs.map((doc) => AnalysisRecord.fromMap(doc.data())).toList(),
-        );
   }
 
   Future<List<AnalysisRecord>> loadCachedHistory() async {
@@ -136,38 +66,26 @@ class AnalysisRepository {
   }
 
   Future<AnalysisRecord?> getAnalysisById(String id) async {
-    try {
-      final snapshot = await _firestore.collection('analyses').doc(id).get();
-      if (snapshot.exists && snapshot.data() != null) {
-        return AnalysisRecord.fromMap(snapshot.data()!);
-      }
-    } catch (_) {
-      // Fall back to cached records below.
-    }
     final cached = await loadCachedHistory();
-    return cached.where((item) => item.id == id).firstOrNull;
+    try {
+      return cached.firstWhere((item) => item.id == id);
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> toggleFavorite(String id, bool value) async {
-    try {
-      await _firestore.collection('analyses').doc(id).update({'isFavorite': value});
-    } catch (_) {
-      final cached = await _cache.readCachedAnalyses();
-      final updated = cached
-          .map((item) => item['id'] == id ? {...item, 'isFavorite': value} : item)
-          .toList();
-      await _cache.writeCachedAnalyses(updated);
-    }
+    final cached = await _cache.readCachedAnalyses();
+    final updated = cached
+        .map((item) => item['id'] == id ? {...item, 'isFavorite': value} : item)
+        .toList();
+    await _cache.writeCachedAnalyses(updated);
     await _analytics.logEvent('result_favorited', {'value': value});
   }
 
   Future<void> deleteAnalysis(String id) async {
-    try {
-      await _firestore.collection('analyses').doc(id).delete();
-    } catch (_) {
-      final cached = await _cache.readCachedAnalyses();
-      await _cache.writeCachedAnalyses(cached.where((item) => item['id'] != id).toList());
-    }
+    final cached = await _cache.readCachedAnalyses();
+    await _cache.writeCachedAnalyses(cached.where((item) => item['id'] != id).toList());
   }
 
   Future<int> getCompletedAnalysisCount() => _cache.getCompletedAnalysisCount();
@@ -179,12 +97,10 @@ class AnalysisRepository {
   }) async {
     await _consumeLocalCredits(1);
     final now = DateTime.now();
-    final summary = message.length > 90
-        ? '${message.substring(0, 90)}...'
-        : message;
+    final summary = message.length > 90 ? '${message.substring(0, 90)}...' : message;
     final record = AnalysisRecord(
-      id: 'local_${now.microsecondsSinceEpoch}',
-      uid: _uid,
+      id: _uuid.v4(),
+      uid: 'local_user',
       type: AnalysisType.messageAnalysis,
       inputText: message,
       contextText: context,
@@ -206,7 +122,7 @@ class AnalysisRepository {
       isFavorite: false,
       createdAt: now,
       updatedAt: now,
-      neutralityNote: 'Bu sonuç cihaz içi yedek üretim modundan geldiği için yorum daha genel tutuldu.',
+      neutralityNote: 'Bu sonuç cihaz içi üretim modundan geldiği için yorum daha genel tutuldu.',
       clarityLevel: 'Orta',
       interestLevel: 'Belirsiz',
       avoidNow: const [],
@@ -219,7 +135,7 @@ class AnalysisRepository {
     await _analytics.logEvent('analysis_completed', {
       'type': 'message_analysis',
       'completed_count': count,
-      'mode': 'local_fallback',
+      'mode': 'local',
     });
     return record;
   }
@@ -240,8 +156,8 @@ class AnalysisRepository {
     ];
     final now = DateTime.now();
     final record = AnalysisRecord(
-      id: 'local_${now.microsecondsSinceEpoch}',
-      uid: _uid,
+      id: _uuid.v4(),
+      uid: 'local_user',
       type: AnalysisType.replyGeneration,
       inputText: message,
       contextText: context,
@@ -271,7 +187,7 @@ class AnalysisRepository {
     final count = await _cache.incrementCompletedAnalysisCount();
     await _analytics.logEvent('reply_generated', {
       'completed_count': count,
-      'mode': 'local_fallback',
+      'mode': 'local',
     });
     return record;
   }
@@ -283,8 +199,8 @@ class AnalysisRepository {
     await _consumeLocalCredits(2);
     final now = DateTime.now();
     final record = AnalysisRecord(
-      id: 'local_${now.microsecondsSinceEpoch}',
-      uid: _uid,
+      id: _uuid.v4(),
+      uid: 'local_user',
       type: AnalysisType.situationStrategy,
       inputText: situation,
       contextText: null,
@@ -314,7 +230,7 @@ class AnalysisRepository {
     final count = await _cache.incrementCompletedAnalysisCount();
     await _analytics.logEvent('strategy_generated', {
       'completed_count': count,
-      'mode': 'local_fallback',
+      'mode': 'local',
     });
     return record;
   }

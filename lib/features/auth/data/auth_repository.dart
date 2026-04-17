@@ -1,183 +1,103 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:iliski_kocu_ai/core/errors/app_exception.dart';
 import 'package:iliski_kocu_ai/core/services/analytics_service.dart';
 import 'package:iliski_kocu_ai/core/services/local_cache_service.dart';
 import 'package:iliski_kocu_ai/shared/models/app_user.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:uuid/uuid.dart';
 
 class AuthRepository {
   AuthRepository({
-    required FirebaseAuth auth,
-    required FirebaseFirestore firestore,
-    required FirebaseFunctions functions,
     required AnalyticsService analytics,
     required LocalCacheService cache,
-  })  : _auth = auth,
-        _firestore = firestore,
-        _functions = functions,
-        _analytics = analytics,
+  })  : _analytics = analytics,
         _cache = cache;
 
-  final FirebaseAuth _auth;
-  final FirebaseFirestore _firestore;
-  final FirebaseFunctions _functions;
   final AnalyticsService _analytics;
   final LocalCacheService _cache;
-
-  Stream<User?> authStateChanges() => _auth.authStateChanges();
+  final Uuid _uuid = const Uuid();
 
   Future<AppUser> bootstrapSession() async {
-    User? user = _auth.currentUser;
-    if (user == null) {
-      final credential = await _auth.signInAnonymously();
-      user = credential.user;
-      await _analytics.logEvent('guest_session_created');
-    }
-    if (user == null) {
-      throw const AppException('Misafir oturumu başlatılamadı.', code: 'anonymous_failed');
-    }
-    final document = _firestore.collection('users').doc(user.uid);
-    final snapshot = await document.get();
+    final existing = await _cache.readUserProfile();
     final now = DateTime.now();
-    if (!snapshot.exists) {
-      await document.set(
-        AppUser(
-          uid: user.uid,
-          displayName: null,
-          email: null,
-          photoUrl: null,
-          provider: 'anonymous',
-          authType: 'anonymous',
-          isGuest: true,
-          isLinked: false,
-          createdAt: now,
-          lastLoginAt: now,
-          linkedAt: null,
-          language: 'tr',
-          planType: 'free',
-          creditBalance: 1,
-          isOnboarded: false,
-          subscriptionStatus: 'inactive',
-          subscriptionPlatform: null,
-          subscriptionExpiryDate: null,
-          notificationEnabled: false,
-          deletedAt: null,
-        ).toMap(),
-      );
-    } else {
-      final existingData = snapshot.data()!;
-      final shouldGrantStarterLocally =
-          (existingData['creditBalance'] as num?)?.toInt() == 0 &&
-          ((existingData['isOnboarded'] as bool?) ?? false) == false;
-      await document.update({
-        'lastLoginAt': Timestamp.fromDate(now),
-        if (shouldGrantStarterLocally) 'creditBalance': 1,
-      });
+
+    if (existing != null) {
+      final user = AppUser.fromMap(existing).copyWith(lastLoginAt: now);
+      final merged = await _mergeLocalState(user);
+      await _cache.writeUserProfile(merged.toMap());
+      return merged;
     }
-    final fresh = await document.get();
-    return _mergeLocalState(AppUser.fromMap(fresh.data()!));
+
+    final newUser = AppUser(
+      uid: _uuid.v4(),
+      displayName: _generateNickname(),
+      email: null,
+      photoUrl: null,
+      provider: 'local',
+      authType: 'local',
+      isGuest: false,
+      isLinked: false,
+      createdAt: now,
+      lastLoginAt: now,
+      linkedAt: null,
+      language: 'tr',
+      planType: 'free',
+      creditBalance: 1,
+      isOnboarded: false,
+      subscriptionStatus: 'inactive',
+      subscriptionPlatform: null,
+      subscriptionExpiryDate: null,
+      notificationEnabled: false,
+      deletedAt: null,
+    );
+
+    await _cache.writeUserProfile(newUser.toMap());
+    await _cache.setLocalCreditBalance(1);
+    await _analytics.logEvent('local_session_created');
+    return newUser;
   }
 
   Future<void> markOnboardingCompleted() async {
     await _cache.markOnboardingSeen();
-    final uid = _auth.currentUser?.uid;
-    if (uid != null) {
-      await _firestore.collection('users').doc(uid).update({'isOnboarded': true});
-    }
+    final user = await getCurrentProfile();
+    final updated = user.copyWith(isOnboarded: true, lastLoginAt: DateTime.now());
+    await _cache.writeUserProfile(updated.toMap());
     await _analytics.logEvent('onboarding_completed');
   }
 
   Future<bool> isOnboardingSeen() => _cache.isOnboardingSeen();
 
   Future<AppUser> getCurrentProfile() async {
-    final uid = _auth.currentUser?.uid;
-    if (uid == null) {
-      throw const AppException('Oturum bulunamadı.', code: 'missing_session');
+    final existing = await _cache.readUserProfile();
+    if (existing == null) {
+      return bootstrapSession();
     }
-    final snapshot = await _firestore.collection('users').doc(uid).get();
-    return _mergeLocalState(AppUser.fromMap(snapshot.data()!));
+    return _mergeLocalState(AppUser.fromMap(existing));
   }
 
-  Future<void> linkWithGoogle() async {
-    final googleUser = await GoogleSignIn().signIn();
-    if (googleUser == null) {
-      throw const AppException('Google ile giriş iptal edildi.', code: 'google_cancelled');
-    }
-    final googleAuth = await googleUser.authentication;
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-    await _linkCredential(credential, provider: 'google');
-  }
+  Future<void> linkWithGoogle() async {}
 
-  Future<void> linkWithApple() async {
-    final appleCredential = await SignInWithApple.getAppleIDCredential(
-      scopes: [AppleIDAuthorizationScopes.email, AppleIDAuthorizationScopes.fullName],
-    );
-    final oauth = OAuthProvider('apple.com').credential(
-      idToken: appleCredential.identityToken,
-      accessToken: appleCredential.authorizationCode,
-    );
-    await _linkCredential(oauth, provider: 'apple');
-  }
+  Future<void> linkWithApple() async {}
 
-  Future<void> linkWithEmail(String email, String password) async {
-    await _linkCredential(
-      EmailAuthProvider.credential(email: email, password: password),
-      provider: 'email',
-    );
-  }
-
-  Future<void> _linkCredential(AuthCredential credential, {required String provider}) async {
-    final user = _auth.currentUser;
-    if (user == null) {
-      throw const AppException('Bağlanacak aktif oturum bulunamadı.', code: 'missing_session');
-    }
-    await user.linkWithCredential(credential);
-    try {
-      await _functions.httpsCallable('grantLinkReward').call();
-    } catch (_) {
-      // Linking reward can be skipped in local-only mode.
-    }
-    await _analytics.logEvent('account_link_completed', {'provider': provider});
-    await _analytics.logEvent('sign_in_completed', {'provider': provider});
-  }
+  Future<void> linkWithEmail(String email, String password) async {}
 
   Future<void> deleteAllData() async {
-    try {
-      await _functions.httpsCallable('deleteUserData').call();
-    } catch (_) {
-      // Local-only mode: clearing cache is enough to reset the app state.
-    }
     await _cache.clearAll();
+    await bootstrapSession();
   }
 
   Future<void> deleteAccount() async {
-    await deleteAllData();
-    try {
-      await _auth.currentUser?.delete();
-    } catch (_) {
-      await _auth.signOut();
-    }
+    await _cache.clearAll();
   }
 
   Future<void> signOutGuestAware() async {
     await _cache.clearAll();
-    await _auth.signOut();
   }
 
   Future<void> updateDisplayName(String displayName) async {
-    final uid = _auth.currentUser?.uid;
-    if (uid == null) {
-      throw const AppException('Aktif oturum bulunamadı.', code: 'missing_session');
-    }
-    await _firestore.collection('users').doc(uid).update({
-      'displayName': displayName.trim(),
-    });
+    final user = await getCurrentProfile();
+    final updated = user.copyWith(
+      displayName: displayName.trim(),
+      lastLoginAt: DateTime.now(),
+    );
+    await _cache.writeUserProfile(updated.toMap());
   }
 
   Future<AppUser> _mergeLocalState(AppUser user) async {
@@ -185,27 +105,21 @@ class AuthRepository {
     final localPlanType = await _cache.getLocalPlanType();
     final localSubscriptionStatus = await _cache.getLocalSubscriptionStatus();
 
-    return AppUser(
-      uid: user.uid,
-      displayName: user.displayName,
-      email: user.email,
-      photoUrl: user.photoUrl,
-      provider: user.provider,
-      authType: user.authType,
-      isGuest: user.isGuest,
-      isLinked: user.isLinked,
-      createdAt: user.createdAt,
-      lastLoginAt: user.lastLoginAt,
-      linkedAt: user.linkedAt,
-      language: user.language,
+    final merged = user.copyWith(
       planType: localPlanType ?? user.planType,
       creditBalance: localCredits ?? user.creditBalance,
-      isOnboarded: user.isOnboarded,
       subscriptionStatus: localSubscriptionStatus ?? user.subscriptionStatus,
-      subscriptionPlatform: user.subscriptionPlatform,
-      subscriptionExpiryDate: user.subscriptionExpiryDate,
-      notificationEnabled: user.notificationEnabled,
-      deletedAt: user.deletedAt,
     );
+    await _cache.writeUserProfile(merged.toMap());
+    return merged;
+  }
+
+  String _generateNickname() {
+    final adjectives = ['Sakin', 'Nazik', 'Dingin', 'Yumuşak', 'Işıl', 'Derin'];
+    final nouns = ['Rüzgar', 'Yıldız', 'Deniz', 'Kalp', 'Ayışığı', 'Yol'];
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final adjective = adjectives[now % adjectives.length];
+    final noun = nouns[(now ~/ 7) % nouns.length];
+    return '$adjective $noun';
   }
 }

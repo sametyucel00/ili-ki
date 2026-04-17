@@ -17,13 +17,11 @@ class PrivacyPolicyScreen extends StatelessWidget {
             children: [
               const SectionHeader('Gizlilik Özeti'),
               const SizedBox(height: 12),
-              const Text('Hisle; analiz geçmişi, kredi durumu, hesap bağlantısı, satın alma ve cihazla ilişkili teknik olay kayıtlarını hizmeti sunmak için işler.'),
+              const Text('Hisle; analiz geçmişi, kredi durumu, satın alma durumu ve cihazla ilişkili temel uygulama ayarlarını hizmeti sunmak için yerel olarak işler.'),
               const SizedBox(height: 12),
-              const Text('Mesaj içerikleri AI işlemesi için backend tarafına gönderilir; mümkün olduğunda içerik minimizasyonu uygulanır ve hata kayıtlarında düz mesaj içeriği tutulmamalıdır.'),
+              const Text('Mesaj içerikleri bu sürümde cihaz içinde işlenir ve yerel önbellekte tutulur. Kullanıcı isterse uygulama içinden tüm verilerini temizleyebilir.'),
               const SizedBox(height: 12),
-              const Text('Misafir kullanımda sınırlı yerel önbellek bulunur. Hesap bağlandığında geçmiş, krediler ve satın alma ilişkili durum bulut senkronu için Firebase üzerinde saklanabilir.'),
-              const SizedBox(height: 12),
-              const Text('Kullanıcı uygulama içinden verilerini silebilir, hesabını silebilir ve satın alma geri yükleme talebinde bulunabilir.'),
+              const Text('Satın alma ve reklam ödülü bilgileri cihaz içinde saklanır. Uygulama silinirse bu veriler kaybolabilir.'),
               const SizedBox(height: 16),
               OutlinedButton(
                 onPressed: () => openExternalLink(AppLinks.privacyUrl),

@@ -1,10 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iliski_kocu_ai/core/services/analytics_service.dart';
 import 'package:iliski_kocu_ai/core/services/connectivity_service.dart';
@@ -20,31 +14,16 @@ import 'package:iliski_kocu_ai/features/history/data/history_repository.dart';
 import 'package:iliski_kocu_ai/features/premium/data/premium_repository.dart';
 import 'package:iliski_kocu_ai/shared/models/app_config_model.dart';
 
-final firebaseAuthProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
-final firestoreProvider = Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
-final firebaseFunctionsProvider = Provider<FirebaseFunctions>(
-  (ref) => FirebaseFunctions.instance,
-);
-final firebaseAnalyticsProvider = Provider<FirebaseAnalytics>((ref) => FirebaseAnalytics.instance);
-final remoteConfigProvider = Provider<FirebaseRemoteConfig>((ref) => FirebaseRemoteConfig.instance);
-final firebaseMessagingProvider = Provider<FirebaseMessaging>((ref) => FirebaseMessaging.instance);
 final connectivityProvider = Provider<Connectivity>((ref) => Connectivity());
 
 final localCacheServiceProvider = Provider<LocalCacheService>((ref) => LocalCacheService());
-final analyticsServiceProvider = Provider<AnalyticsService>(
-  (ref) => AnalyticsService(ref.watch(firebaseAnalyticsProvider)),
-);
-final remoteConfigServiceProvider = Provider<RemoteConfigService>(
-  (ref) => RemoteConfigService(ref.watch(remoteConfigProvider)),
-);
+final analyticsServiceProvider = Provider<AnalyticsService>((ref) => const AnalyticsService());
+final remoteConfigServiceProvider = Provider<RemoteConfigService>((ref) => const RemoteConfigService());
 final connectivityServiceProvider = Provider<ConnectivityService>(
   (ref) => ConnectivityService(ref.watch(connectivityProvider)),
 );
 final notificationServiceProvider = Provider<NotificationService>(
-  (ref) => NotificationService(
-    ref.watch(firebaseMessagingProvider),
-    ref.watch(analyticsServiceProvider),
-  ),
+  (ref) => NotificationService(ref.watch(analyticsServiceProvider)),
 );
 final paywallServiceProvider = Provider<PaywallService>((ref) => const PaywallService());
 final purchasesServiceProvider = Provider<PurchasesService>(
@@ -56,9 +35,6 @@ final rewardedAdServiceProvider = Provider<RewardedAdService>(
 
 final authRepositoryProvider = Provider<AuthRepository>(
   (ref) => AuthRepository(
-    auth: ref.watch(firebaseAuthProvider),
-    firestore: ref.watch(firestoreProvider),
-    functions: ref.watch(firebaseFunctionsProvider),
     analytics: ref.watch(analyticsServiceProvider),
     cache: ref.watch(localCacheServiceProvider),
   ),
@@ -66,8 +42,6 @@ final authRepositoryProvider = Provider<AuthRepository>(
 
 final analysisRepositoryProvider = Provider<AnalysisRepository>(
   (ref) => AnalysisRepository(
-    firestore: ref.watch(firestoreProvider),
-    functions: ref.watch(firebaseFunctionsProvider),
     cache: ref.watch(localCacheServiceProvider),
     analytics: ref.watch(analyticsServiceProvider),
   ),
@@ -75,15 +49,12 @@ final analysisRepositoryProvider = Provider<AnalysisRepository>(
 
 final historyRepositoryProvider = Provider<HistoryRepository>(
   (ref) => HistoryRepository(
-    firestore: ref.watch(firestoreProvider),
     cache: ref.watch(localCacheServiceProvider),
   ),
 );
 
 final premiumRepositoryProvider = Provider<PremiumRepository>(
   (ref) => PremiumRepository(
-    firestore: ref.watch(firestoreProvider),
-    functions: ref.watch(firebaseFunctionsProvider),
     cache: ref.watch(localCacheServiceProvider),
     purchases: ref.watch(purchasesServiceProvider),
     analytics: ref.watch(analyticsServiceProvider),
