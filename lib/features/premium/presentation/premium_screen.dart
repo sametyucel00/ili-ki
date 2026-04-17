@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:iliski_kocu_ai/core/config/env.dart';
 import 'package:iliski_kocu_ai/core/services/providers.dart';
 import 'package:iliski_kocu_ai/features/auth/presentation/auth_controller.dart';
 import 'package:iliski_kocu_ai/features/premium/data/premium_repository.dart';
@@ -31,7 +30,6 @@ class PremiumScreen extends ConsumerWidget {
     final history = ref.watch(purchaseHistoryProvider);
     final user = ref.watch(authControllerProvider).valueOrNull;
     final activeProductId = ref.watch(premiumProductIdProvider).valueOrNull;
-    final isAndroidSimulation = Env.useAndroidPurchaseSimulation;
     final expiry = user?.subscriptionExpiryDate;
     final remainingDays = expiry == null ? null : expiry.difference(DateTime.now()).inDays + 1;
 
@@ -92,22 +90,15 @@ class PremiumScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          PrimaryCard(
+          const PrimaryCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SectionHeader('Plan karşılaştırması'),
-                const SizedBox(height: 12),
-                const Text('• Standart kullanım: günlük 3 analiz hakkı'),
-                const Text('• Premium: günlük 10 analiz hakkı'),
-                const Text('• Kredi paketleri: hızlı şekilde ek analiz hakkı'),
-                if (isAndroidSimulation) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    'Android test modu açık. Bu ekrandaki satın alma butonlarına bastığında işlem doğrudan hesabına uygulanır.',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
+                SectionHeader('Plan karşılaştırması'),
+                SizedBox(height: 12),
+                Text('• Standart kullanım: günlük 3 analiz hakkı'),
+                Text('• Premium: günlük 10 analiz hakkı'),
+                Text('• Kredi paketleri: hızlı şekilde ek analiz hakkı'),
               ],
             ),
           ),

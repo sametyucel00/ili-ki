@@ -55,13 +55,13 @@ class PremiumRepository {
         onTimeout: () => false,
       );
       if (!available) {
-        return _debugProducts;
+        return _fallbackProducts;
       }
       final storeProducts = await _purchases.getProducts().timeout(
         const Duration(seconds: 6),
         onTimeout: () => <ProductDetails>[],
       );
-      return storeProducts.isEmpty ? _debugProducts : storeProducts;
+      return storeProducts.isEmpty ? _fallbackProducts : storeProducts;
     }
 
     final available = await _purchases.isAvailable().timeout(
@@ -154,9 +154,7 @@ class PremiumRepository {
         note: message,
       );
       return PurchaseFeedback(
-        message: didChangePlan
-            ? 'Paketin ${_planTitle(productId)} olarak güncellendi.'
-            : '${_planTitle(productId)} aktif edildi.',
+        message: message,
         didChangeEntitlement: true,
       );
     }
@@ -199,39 +197,39 @@ class PremiumRepository {
     });
   }
 
-  List<ProductDetails> get _debugProducts => [
+  List<ProductDetails> get _fallbackProducts => [
         ProductDetails(
           id: 'com.hisle.app.premium.monthly',
-          title: 'Premium Aylık (Android test modu)',
-          description: 'Butona bastığında anında premium aktif olur.',
-          price: 'Test satın al',
+          title: 'Premium Aylık',
+          description: 'Aylık premium erişim ve daha yüksek günlük limitler.',
+          price: 'Satın al',
           rawPrice: 0,
           currencyCode: 'TRY',
           currencySymbol: '₺',
         ),
         ProductDetails(
           id: 'com.hisle.app.premium.yearly',
-          title: 'Premium Yıllık (Android test modu)',
-          description: 'Yıllık paketi mağaza beklemeden denetle.',
-          price: 'Test satın al',
+          title: 'Premium Yıllık',
+          description: 'Yıllık premium erişim ve avantajlı kullanım.',
+          price: 'Satın al',
           rawPrice: 0,
           currencyCode: 'TRY',
           currencySymbol: '₺',
         ),
         ProductDetails(
           id: 'com.hisle.app.credits.10',
-          title: '10 Kredi (Android test modu)',
-          description: 'Butona bastığında hesabına 10 kredi eklenir.',
-          price: 'Test ekle',
+          title: '10 Kredi',
+          description: 'Mesaj analizi, cevap yazdırma ve durum anlatma için ek kredi.',
+          price: 'Satın al',
           rawPrice: 0,
           currencyCode: 'TRY',
           currencySymbol: '₺',
         ),
         ProductDetails(
           id: 'com.hisle.app.credits.50',
-          title: '50 Kredi (Android test modu)',
-          description: 'Butona bastığında hesabına 50 kredi eklenir.',
-          price: 'Test ekle',
+          title: '50 Kredi',
+          description: 'Daha uzun kullanım için avantajlı kredi paketi.',
+          price: 'Satın al',
           rawPrice: 0,
           currencyCode: 'TRY',
           currencySymbol: '₺',
