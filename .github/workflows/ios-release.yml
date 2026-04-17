@@ -118,48 +118,6 @@ jobs:
           </plist>
           EOF
 
-      - name: Inject signing settings into Xcode project
-        env:
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
-          IOS_PROFILE_NAME: ${{ secrets.IOS_PROFILE_NAME }}
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import os
-          import re
-
-          path = Path("ios/Runner.xcodeproj/project.pbxproj")
-          text = path.read_text()
-
-          bundle_id = os.environ["IOS_BUNDLE_ID"].strip()
-          team_id = os.environ["APPLE_TEAM_ID"].strip()
-          profile_name = os.environ["IOS_PROFILE_NAME"].strip()
-
-          pattern = re.compile(
-              r'(PRODUCT_BUNDLE_IDENTIFIER = )([^;]+);'
-              r'(?:(?!CODE_SIGN_ENTITLEMENTS|SWIFT_VERSION).)*?'
-              r'(SWIFT_VERSION = 5\.0;)',
-              re.DOTALL,
-          )
-
-          matches = list(pattern.finditer(text))
-          if not matches:
-              raise SystemExit("Could not find Runner build configuration blocks in project.pbxproj")
-
-          def repl(match):
-              return (
-                  f'{match.group(1)}{bundle_id};\n'
-                  f'\t\t\t\tDEVELOPMENT_TEAM = {team_id};\n'
-                  f'\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "{profile_name}";\n'
-                  f'\t\t\t\tCODE_SIGN_STYLE = Manual;\n'
-                  f'\t\t\t\t{match.group(3)}'
-              )
-
-          text = pattern.sub(repl, text, count=3)
-          path.write_text(text)
-          PY
-
       - name: Debug Xcode signing settings
         env:
           IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
@@ -170,8 +128,36 @@ jobs:
           echo "Expected bundle id: $IOS_BUNDLE_ID"
           echo "Expected team id: $APPLE_TEAM_ID"
 
-      - name: Build IPA
-        run: flutter build ipa --release --export-options-plist=ios/ExportOptions.plist --dart-define=AI_BACKEND_URL="${{ secrets.AI_BACKEND_URL }}"
+      - name: Build iOS app without codesign
+        run: flutter build ios --release --no-codesign --dart-define=AI_BACKEND_URL="${{ secrets.AI_BACKEND_URL }}"
+
+      - name: Archive app with xcodebuild
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
+          IOS_PROFILE_NAME: ${{ secrets.IOS_PROFILE_NAME }}
+        run: |
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          xcodebuild \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath build/ios/archive/Runner.xcarchive \
+            archive \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            PRODUCT_BUNDLE_IDENTIFIER="$IOS_BUNDLE_ID" \
+            PROVISIONING_PROFILE_SPECIFIER="$IOS_PROFILE_NAME" \
+            CODE_SIGN_STYLE=Manual \
+            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH"
+
+      - name: Export IPA with xcodebuild
+        run: |
+          xcodebuild \
+            -exportArchive \
+            -archivePath build/ios/archive/Runner.xcarchive \
+            -exportOptionsPlist ios/ExportOptions.plist \
+            -exportPath build/ios/ipa
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
