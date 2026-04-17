@@ -6,9 +6,10 @@ const express = require('express');
 const app = express();
 const port = Number(process.env.PORT || 3000);
 const provider = (process.env.AI_PROVIDER || 'openai').toLowerCase();
-const model = provider === 'groq'
-  ? process.env.GROQ_MODEL || 'llama-3.1-8b-instant'
-  : process.env.OPENAI_MODEL || 'gpt-4o-mini';
+const model =
+  provider === 'groq'
+    ? process.env.GROQ_MODEL || 'llama-3.1-8b-instant'
+    : process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '*')
   .split(',')
   .map((item) => item.trim())
@@ -139,7 +140,7 @@ async function callAiProvider(type, input) {
     },
     body: JSON.stringify({
       model,
-      temperature: 0.45,
+      temperature: 0.35,
       max_tokens: input.tier === 'premium' ? 900 : 650,
       response_format: { type: 'json_object' },
       messages: [
@@ -177,8 +178,11 @@ function systemPrompt() {
     'Başka bir kişinin iç düşünceleri hakkında kesinlik iddia etme; olasılık ve belirsizlik dili kullan.',
     'Manipülasyon, takip, taciz, baskı, intikam, kıskandırma, bağımlılık oluşturma veya zorlama önerme.',
     'Sakin, doğal, pratik, kısa ve mobil ekranda okunabilir yaz.',
-    'Cevap üretirken gelen mesajı yazan kişi karşı taraftır; replyOptions her zaman uygulama kullanıcısının karşı tarafa göndereceği cevaplar olmalıdır.',
-    'Karşı tarafın cümlesini sahiplenme, gelen mesajı tekrar etme, kullanıcıyı "bugün konuşmak istemiyorum" diyen kişi gibi yazma.',
+    'Reply üretirken message alanı daima karşı tarafın gönderdiği metindir.',
+    'replyOptions daima uygulama kullanıcısının karşı tarafa göndereceği cevaplar olmalıdır.',
+    'Karşı tarafın mesajındaki birinci tekil ifadeleri kullanıcıya aitmiş gibi sahiplenme.',
+    'Gelen mesajı tekrar etme; ona cevap ver.',
+    'recommendedAction bir mesaj değil, kullanıcıya kısa strateji önerisi olmalıdır.',
     'Sadece geçerli JSON döndür. Markdown kullanma.',
   ].join('\n');
 }
@@ -208,11 +212,13 @@ function userPrompt(type, input) {
     return JSON.stringify({
       task: 'Karşı taraftan gelen mesaja, uygulama kullanıcısının gönderebileceği doğal Türkçe cevap seçenekleri üret.',
       perspectiveRules: [
-        'message alanı karşı tarafın gönderdiği metindir.',
-        'replyOptions kullanıcının karşı tarafa vereceği cevaplardır.',
+        'message karşı tarafın gönderdiği metindir.',
+        'replyOptions kullanıcının karşı tarafa göndereceği cevaplardır.',
+        'recommendedAction kullanıcıya strateji önerisidir; mesaj metni gibi yazılmamalıdır.',
         'Gelen mesajdaki "ben" ifadelerini kullanıcıya aitmiş gibi kullanma.',
         'Gelen mesajı tekrar etme; ona cevap ver.',
-        'Cevaplar tek başına gönderilebilir doğal mesajlar olsun.',
+        'Çok soğuk, keskin veya kapanış gibi duran "Anlaşıldı, görüşürüz" tarzı cevaplardan kaçın.',
+        'Cevaplar sakin, saygılı, alan tanıyan ve tek başına gönderilebilir doğal mesajlar olsun.',
       ],
       outputShape: {
         recommendedAction: 'string',
@@ -270,7 +276,7 @@ function normalize(type, parsed) {
 
   if (type === 'reply_generation') {
     return {
-      recommendedAction: stringOr(parsed.recommendedAction, 'Sakin ve alan tanıyan bir cevap seç.'),
+      recommendedAction: normalizeReplyAction(parsed.recommendedAction),
       replyOptions: ensureReplyOptions(parsed.replyOptions).slice(0, 3),
     };
   }
@@ -296,17 +302,30 @@ function listOfStrings(value) {
     : [];
 }
 
-function ensureReplyOptions(value) {
-  const options = listOfStrings(value).filter((item) => !looksLikeMirroredIncomingMessage(item));
-  if (options.length >= 3) {
-    return options;
+function normalizeReplyAction(value) {
+  const action = stringOr(value, 'Sakin ve alan tanıyan bir cevap seç.');
+  if (looksLikeReplyText(action) || looksTooCold(action)) {
+    return 'Karşı tarafın alan ihtiyacını kabul eden, sakin ve kapıyı açık bırakan bir cevap seç.';
   }
-  return [
-    ...options,
+  return action;
+}
+
+function ensureReplyOptions(value) {
+  const options = listOfStrings(value).filter((item) => isGoodReplyOption(item));
+  const fallback = [
     'Anlıyorum, kendine zaman ayırman iyi olabilir. Uygun olduğunda konuşuruz.',
     'Tamam, seni zorlamak istemem. Müsait hissettiğinde yazarsın.',
     'Sorun değil, biraz alan bırakıyorum. Hazır olduğunda konuşabiliriz.',
-  ].slice(0, 3);
+  ];
+  return [...options, ...fallback].filter(unique).slice(0, 3);
+}
+
+function isGoodReplyOption(text) {
+  const trimmed = text.trim();
+  if (trimmed.length < 28) {
+    return false;
+  }
+  return !looksLikeMirroredIncomingMessage(trimmed) && !looksTooCold(trimmed);
 }
 
 function looksLikeMirroredIncomingMessage(text) {
@@ -315,6 +334,33 @@ function looksLikeMirroredIncomingMessage(text) {
     lower.includes('bugün konuşmak istemiyorum') ||
     lower.includes('ben konuşmak istemiyorum') ||
     lower.includes('yarın daha iyi hissederim') ||
-    lower.includes('görüşmek üzere') && lower.includes('bugün')
+    lower.includes('bugün çok yoruldum') ||
+    (lower.includes('görüşmek üzere') && lower.includes('bugün')) ||
+    (lower.includes('seni seviyorum') && lower.includes('konuşmak istemiyorum'))
   );
+}
+
+function looksTooCold(text) {
+  const lower = text.toLocaleLowerCase('tr').replace(/\s+/g, ' ').trim();
+  return (
+    lower === 'anlaşıldı, görüşürüz.' ||
+    lower === 'anlaşıldı, görüşürüz' ||
+    lower === 'yarın görüşürüz, iyi günler.' ||
+    lower === 'yarın görüşürüz, iyi günler' ||
+    lower === 'iyi günler, konuşmak istemiyorum anlaşıldı. yarın görüşürüz.'
+  );
+}
+
+function looksLikeReplyText(text) {
+  const lower = text.toLocaleLowerCase('tr');
+  return (
+    lower.includes('görüşürüz') ||
+    lower.includes('yazarım') ||
+    lower.includes('konuşuruz') ||
+    lower.includes('iyi günler')
+  );
+}
+
+function unique(item, index, array) {
+  return array.indexOf(item) === index;
 }
