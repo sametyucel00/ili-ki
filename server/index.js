@@ -177,6 +177,8 @@ function systemPrompt() {
     'Başka bir kişinin iç düşünceleri hakkında kesinlik iddia etme; olasılık ve belirsizlik dili kullan.',
     'Manipülasyon, takip, taciz, baskı, intikam, kıskandırma, bağımlılık oluşturma veya zorlama önerme.',
     'Sakin, doğal, pratik, kısa ve mobil ekranda okunabilir yaz.',
+    'Cevap üretirken gelen mesajı yazan kişi karşı taraftır; replyOptions her zaman uygulama kullanıcısının karşı tarafa göndereceği cevaplar olmalıdır.',
+    'Karşı tarafın cümlesini sahiplenme, gelen mesajı tekrar etme, kullanıcıyı "bugün konuşmak istemiyorum" diyen kişi gibi yazma.',
     'Sadece geçerli JSON döndür. Markdown kullanma.',
   ].join('\n');
 }
@@ -204,7 +206,14 @@ function userPrompt(type, input) {
 
   if (type === 'reply_generation') {
     return JSON.stringify({
-      task: 'Gelen mesaja doğal Türkçe cevap seçenekleri üret.',
+      task: 'Karşı taraftan gelen mesaja, uygulama kullanıcısının gönderebileceği doğal Türkçe cevap seçenekleri üret.',
+      perspectiveRules: [
+        'message alanı karşı tarafın gönderdiği metindir.',
+        'replyOptions kullanıcının karşı tarafa vereceği cevaplardır.',
+        'Gelen mesajdaki "ben" ifadelerini kullanıcıya aitmiş gibi kullanma.',
+        'Gelen mesajı tekrar etme; ona cevap ver.',
+        'Cevaplar tek başına gönderilebilir doğal mesajlar olsun.',
+      ],
       outputShape: {
         recommendedAction: 'string',
         replyOptions: ['string', 'string', 'string'],
@@ -261,8 +270,8 @@ function normalize(type, parsed) {
 
   if (type === 'reply_generation') {
     return {
-      recommendedAction: stringOr(parsed.recommendedAction, 'En doğal gelen cevabı seç.'),
-      replyOptions: listOfStrings(parsed.replyOptions).slice(0, 3),
+      recommendedAction: stringOr(parsed.recommendedAction, 'Sakin ve alan tanıyan bir cevap seç.'),
+      replyOptions: ensureReplyOptions(parsed.replyOptions).slice(0, 3),
     };
   }
 
@@ -285,4 +294,27 @@ function listOfStrings(value) {
   return Array.isArray(value)
     ? value.map((item) => String(item).trim()).filter(Boolean)
     : [];
+}
+
+function ensureReplyOptions(value) {
+  const options = listOfStrings(value).filter((item) => !looksLikeMirroredIncomingMessage(item));
+  if (options.length >= 3) {
+    return options;
+  }
+  return [
+    ...options,
+    'Anlıyorum, kendine zaman ayırman iyi olabilir. Uygun olduğunda konuşuruz.',
+    'Tamam, seni zorlamak istemem. Müsait hissettiğinde yazarsın.',
+    'Sorun değil, biraz alan bırakıyorum. Hazır olduğunda konuşabiliriz.',
+  ].slice(0, 3);
+}
+
+function looksLikeMirroredIncomingMessage(text) {
+  const lower = text.toLocaleLowerCase('tr');
+  return (
+    lower.includes('bugün konuşmak istemiyorum') ||
+    lower.includes('ben konuşmak istemiyorum') ||
+    lower.includes('yarın daha iyi hissederim') ||
+    lower.includes('görüşmek üzere') && lower.includes('bugün')
+  );
 }
