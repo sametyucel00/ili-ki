@@ -96,13 +96,16 @@ jobs:
           echo "Resolved profile UUID: $IOS_PROFILE_UUID"
           echo "Resolved profile name: $IOS_PROFILE_NAME_RESOLVED"
 
-      - name: Create ExportOptions.plist
+      - name: Normalize signing variables
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
         run: |
-          APPLE_TEAM_ID_CLEAN=$(printf "%s" "$APPLE_TEAM_ID" | tr -d '\r\n')
-          IOS_BUNDLE_ID_CLEAN=$(printf "%s" "$IOS_BUNDLE_ID" | tr -d '\r\n')
+          echo "APPLE_TEAM_ID_CLEAN=$(printf "%s" "$APPLE_TEAM_ID" | tr -d '\r\n')" >> $GITHUB_ENV
+          echo "IOS_BUNDLE_ID_CLEAN=$(printf "%s" "$IOS_BUNDLE_ID" | tr -d '\r\n')" >> $GITHUB_ENV
+
+      - name: Create ExportOptions.plist
+        run: |
           cat <<EOF > ios/ExportOptions.plist
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -128,28 +131,25 @@ jobs:
           EOF
 
       - name: Debug Xcode signing settings
-        env:
-          IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          IOS_BUNDLE_ID_CLEAN=$(printf "%s" "$IOS_BUNDLE_ID" | tr -d '\r\n')
-          APPLE_TEAM_ID_CLEAN=$(printf "%s" "$APPLE_TEAM_ID" | tr -d '\r\n')
           echo "Runner build settings:"
-          xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -showBuildSettings | grep -E "PRODUCT_BUNDLE_IDENTIFIER|DEVELOPMENT_TEAM|CODE_SIGN_ENTITLEMENTS|PROVISIONING_PROFILE_SPECIFIER|CODE_SIGN_STYLE" || true
+          xcodebuild \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -showBuildSettings \
+            APPLE_TEAM_ID="${APPLE_TEAM_ID_CLEAN}" \
+            IOS_BUNDLE_ID="${IOS_BUNDLE_ID_CLEAN}" \
+            IOS_PROFILE_NAME="${IOS_PROFILE_NAME_RESOLVED}" | grep -E "PRODUCT_BUNDLE_IDENTIFIER|DEVELOPMENT_TEAM|CODE_SIGN_ENTITLEMENTS|PROVISIONING_PROFILE_SPECIFIER|CODE_SIGN_STYLE|CODE_SIGN_IDENTITY" || true
           echo "Expected bundle id: $IOS_BUNDLE_ID_CLEAN"
           echo "Expected team id: $APPLE_TEAM_ID_CLEAN"
+          echo "Expected profile name: $IOS_PROFILE_NAME_RESOLVED"
 
       - name: Build iOS app without codesign
         run: flutter build ios --release --no-codesign --dart-define=AI_BACKEND_URL="${{ secrets.AI_BACKEND_URL }}"
 
       - name: Archive app with xcodebuild
-        env:
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
         run: |
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-          APPLE_TEAM_ID_CLEAN=$(printf "%s" "$APPLE_TEAM_ID" | tr -d '\r\n')
-          IOS_BUNDLE_ID_CLEAN=$(printf "%s" "$IOS_BUNDLE_ID" | tr -d '\r\n')
           xcodebuild \
             -workspace ios/Runner.xcworkspace \
             -scheme Runner \
@@ -157,9 +157,9 @@ jobs:
             -sdk iphoneos \
             -archivePath build/ios/archive/Runner.xcarchive \
             archive \
-            DEVELOPMENT_TEAM="$APPLE_TEAM_ID_CLEAN" \
-            PRODUCT_BUNDLE_IDENTIFIER="$IOS_BUNDLE_ID_CLEAN" \
-            CODE_SIGN_STYLE=Automatic \
+            APPLE_TEAM_ID="$APPLE_TEAM_ID_CLEAN" \
+            IOS_BUNDLE_ID="$IOS_BUNDLE_ID_CLEAN" \
+            IOS_PROFILE_NAME="$IOS_PROFILE_NAME_RESOLVED" \
             OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH"
 
       - name: Export IPA with xcodebuild
