@@ -1,0 +1,121 @@
+# Hisle AI Node.js Server
+
+Bu klasör, Hisle mobil uygulamasının OpenAI isteklerini güvenli şekilde sunucu üzerinden çalıştırması için hazırlanmış bağımsız Node.js API uygulamasıdır.
+
+Mobil uygulama doğrudan OpenAI API key kullanmaz. Uygulama sadece bu endpoint'e istek atar:
+
+```text
+POST https://api.senindomainin.com/ai
+```
+
+## Kurulum
+
+Sunucuda Node.js 20 veya üzeri olmalı.
+
+```bash
+cd server
+npm install
+cp .env.example .env
+nano .env
+npm start
+```
+
+`.env` içine kendi değerlerini gir:
+
+```text
+OPENAI_API_KEY=sk-proj-...
+OPENAI_MODEL=gpt-4o-mini
+PORT=3000
+ALLOWED_ORIGINS=*
+RATE_LIMIT_WINDOW_MS=60000
+RATE_LIMIT_MAX=30
+```
+
+## Endpointler
+
+Health check:
+
+```text
+GET /health
+```
+
+AI endpoint:
+
+```text
+POST /ai
+```
+
+Örnek body:
+
+```json
+{
+  "type": "reply_generation",
+  "message": "Bugün konuşmak istemiyorum dedi",
+  "tone": "Kibar",
+  "responseLength": "Kısa",
+  "emojiPreference": false,
+  "tier": "standard"
+}
+```
+
+Örnek başarılı cevap:
+
+```json
+{
+  "result": {
+    "recommendedAction": "Kısa ve sakin cevap ver.",
+    "replyOptions": [
+      "Anlıyorum, uygun olduğunda konuşabiliriz.",
+      "Tamam, seni zorlamak istemem.",
+      "Sorun değil, sonra konuşuruz."
+    ]
+  }
+}
+```
+
+## Domain Bağlama
+
+DNS tarafında örnek:
+
+```text
+Type: A
+Name: api
+Value: SUNUCU_IP_ADRESIN
+```
+
+Nginx reverse proxy örneği:
+
+```nginx
+server {
+  server_name api.senindomainin.com;
+
+  location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}
+```
+
+SSL için:
+
+```bash
+sudo certbot --nginx -d api.senindomainin.com
+```
+
+## Flutter Build Ayarı
+
+GitHub Actions secret olarak şunu ekle:
+
+```text
+AI_BACKEND_URL=https://api.senindomainin.com/ai
+```
+
+Lokal test build/run için:
+
+```bash
+flutter run --dart-define=AI_BACKEND_URL=https://api.senindomainin.com/ai
+```

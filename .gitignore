@@ -16,3 +16,6 @@ functions/lib/
 functions/node_modules/
 functions/.env*
 netlify/functions/.env*
+server/node_modules/
+server/.env*
+!server/.env.example
