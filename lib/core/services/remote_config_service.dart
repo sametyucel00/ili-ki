@@ -12,7 +12,7 @@ class RemoteConfigService {
       messageAnalysisCost: 1,
       situationStrategyCost: 2,
       guestDailyLimit: 3,
-      linkedDailyLimit: 3,
+      linkedDailyLimit: 10,
       aiCooldownSeconds: 20,
       latestPromptVersion: 'local-v1',
       maintenanceMode: false,

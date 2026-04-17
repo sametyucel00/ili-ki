@@ -6,6 +6,10 @@ import 'package:iliski_kocu_ai/core/services/providers.dart';
 import 'package:iliski_kocu_ai/features/auth/presentation/auth_controller.dart';
 import 'package:iliski_kocu_ai/shared/widgets/common_widgets.dart';
 
+final dailyUsageProvider = FutureProvider<int>((ref) async {
+  return ref.read(localCacheServiceProvider).getTodayUsageCount();
+});
+
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -13,6 +17,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authControllerProvider);
     final config = ref.watch(appConfigProvider);
+    final usage = ref.watch(dailyUsageProvider);
     final connectivity = ref.watch(connectivityServiceProvider).watchConnection();
 
     return AppScaffold(
@@ -24,7 +29,10 @@ class HomeScreen extends ConsumerWidget {
         ),
       ],
       child: RefreshIndicator(
-        onRefresh: () => ref.read(authControllerProvider.notifier).refreshProfile(),
+        onRefresh: () async {
+          ref.invalidate(dailyUsageProvider);
+          await ref.read(authControllerProvider.notifier).refreshProfile();
+        },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
@@ -39,8 +47,7 @@ class HomeScreen extends ConsumerWidget {
                   padding: EdgeInsets.only(bottom: 12),
                   child: InfoBanner(
                     icon: Icons.wifi_off_rounded,
-                    message:
-                        'İnternet bağlantısı yok. Kayıtlı içerikler gösterilir, yeni analiz için bağlantı gerekir.',
+                    message: 'İnternet bağlantısı yok. Kayıtlı içerikler gösterilir, yeni analiz için bağlantı gerekir.',
                   ),
                 );
               },
@@ -69,7 +76,7 @@ class HomeScreen extends ConsumerWidget {
                     const SizedBox(height: 8),
                     Text(
                       user?.isPremium == true
-                          ? 'Premium aktif. Daha yüksek limitler ve gelişmiş akışlar kullanılabilir.'
+                          ? 'Premium aktif. Daha yüksek günlük limit ve gelişmiş akışlar açık.'
                           : 'Kredi ekleyebilir, premium özellikleri inceleyebilir veya reklam izleyerek analiz hakkı kazanabilirsin.',
                     ),
                     const SizedBox(height: 14),
@@ -103,7 +110,24 @@ class HomeScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 18),
             config.when(
-              data: (value) => _DailyLimitCard(config: value),
+              data: (value) => usage.when(
+                data: (usedToday) => _DailyLimitCard(
+                  config: value,
+                  usedToday: usedToday,
+                  isPremium: auth.valueOrNull?.isPremium == true,
+                ),
+                loading: () => const SizedBox(
+                  height: 220,
+                  child: PrimaryCard(
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                ),
+                error: (_, __) => _DailyLimitCard(
+                  config: value,
+                  usedToday: 0,
+                  isPremium: auth.valueOrNull?.isPremium == true,
+                ),
+              ),
               loading: () => const SizedBox(
                 height: 220,
                 child: PrimaryCard(
@@ -211,10 +235,7 @@ class _QuickActionCard extends StatelessWidget {
               const Spacer(),
               Text(title, style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 6),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
+              Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
             ],
           ),
         ),
@@ -224,13 +245,22 @@ class _QuickActionCard extends StatelessWidget {
 }
 
 class _DailyLimitCard extends StatelessWidget {
-  const _DailyLimitCard({required this.config});
+  const _DailyLimitCard({
+    required this.config,
+    required this.usedToday,
+    required this.isPremium,
+  });
 
   final dynamic config;
+  final int usedToday;
+  final bool isPremium;
 
   @override
   Widget build(BuildContext context) {
     final tone = Theme.of(context).colorScheme;
+    final dailyLimit = isPremium ? config.linkedDailyLimit : config.guestDailyLimit;
+    final remaining = (dailyLimit - usedToday).clamp(0, dailyLimit);
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -253,7 +283,9 @@ class _DailyLimitCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Kullanım sınırlarını, günlük haklarını ve kredi maliyetlerini buradan görebilirsin.',
+            isPremium
+                ? 'Premium kullanıcı olarak günlük daha yüksek analiz hakkın var. Sayaç her yeni günde sıfırlanır.'
+                : 'Standart kullanım limitlerin burada görünür. Sayaç her yeni günde sıfırlanır.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 18),
@@ -261,8 +293,8 @@ class _DailyLimitCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _MetricTile(
-                  label: 'Günlük kullanım',
-                  value: '${config.guestDailyLimit} kez',
+                  label: 'Bugün kalan hak',
+                  value: '$remaining / $dailyLimit',
                 ),
               ),
               const SizedBox(width: 12),
@@ -304,8 +336,8 @@ class _DailyLimitCard extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: _MetricTile(
-                  label: 'Günlük ücretsiz kredi',
-                  value: '${config.freeDailyCredits} kredi',
+                  label: 'Premium günlük hak',
+                  value: '${config.linkedDailyLimit} kez',
                 ),
               ),
             ],

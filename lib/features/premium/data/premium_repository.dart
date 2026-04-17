@@ -76,7 +76,10 @@ class PremiumRepository {
 
   Future<void> _applyLocalPurchase(String productId) async {
     if (productId == 'com.hisle.app.premium.monthly' || productId == 'com.hisle.app.premium.yearly') {
-      await _cache.setLocalPremiumActive();
+      final expiryDate = DateTime.now().add(
+        Duration(days: productId.endsWith('.yearly') ? 365 : 31),
+      );
+      await _cache.setLocalPremiumActive(expiryDate: expiryDate);
       return;
     }
 

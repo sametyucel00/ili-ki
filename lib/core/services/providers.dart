@@ -44,6 +44,7 @@ final analysisRepositoryProvider = Provider<AnalysisRepository>(
   (ref) => AnalysisRepository(
     cache: ref.watch(localCacheServiceProvider),
     analytics: ref.watch(analyticsServiceProvider),
+    config: ref.watch(remoteConfigServiceProvider),
   ),
 );
 

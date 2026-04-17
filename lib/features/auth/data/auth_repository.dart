@@ -104,11 +104,26 @@ class AuthRepository {
     final localCredits = await _cache.getLocalCreditBalance();
     final localPlanType = await _cache.getLocalPlanType();
     final localSubscriptionStatus = await _cache.getLocalSubscriptionStatus();
+    final localPremiumExpiry = await _cache.getLocalPremiumExpiry();
+
+    if (localPremiumExpiry != null && localPremiumExpiry.isBefore(DateTime.now())) {
+      await _cache.clearLocalPremiumState();
+      final fallback = user.copyWith(
+        planType: 'free',
+        subscriptionStatus: 'inactive',
+        subscriptionExpiryDate: null,
+      );
+      await _cache.writeUserProfile(fallback.toMap());
+      return fallback.copyWith(
+        creditBalance: localCredits ?? fallback.creditBalance,
+      );
+    }
 
     final merged = user.copyWith(
       planType: localPlanType ?? user.planType,
       creditBalance: localCredits ?? user.creditBalance,
       subscriptionStatus: localSubscriptionStatus ?? user.subscriptionStatus,
+      subscriptionExpiryDate: localPremiumExpiry ?? user.subscriptionExpiryDate,
     );
     await _cache.writeUserProfile(merged.toMap());
     return merged;

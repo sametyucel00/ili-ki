@@ -1,6 +1,7 @@
 import 'package:iliski_kocu_ai/core/errors/app_exception.dart';
 import 'package:iliski_kocu_ai/core/services/analytics_service.dart';
 import 'package:iliski_kocu_ai/core/services/local_cache_service.dart';
+import 'package:iliski_kocu_ai/core/services/remote_config_service.dart';
 import 'package:iliski_kocu_ai/shared/models/analysis_record.dart';
 import 'package:uuid/uuid.dart';
 
@@ -8,11 +9,14 @@ class AnalysisRepository {
   AnalysisRepository({
     required LocalCacheService cache,
     required AnalyticsService analytics,
+    required RemoteConfigService config,
   })  : _cache = cache,
-        _analytics = analytics;
+        _analytics = analytics,
+        _config = config;
 
   final LocalCacheService _cache;
   final AnalyticsService _analytics;
+  final RemoteConfigService _config;
   final Uuid _uuid = const Uuid();
 
   Future<AnalysisRecord> createMessageAnalysis({
@@ -95,7 +99,9 @@ class AnalysisRepository {
     String? context,
     String? relationshipType,
   }) async {
+    await _checkDailyLimit();
     await _consumeLocalCredits(1);
+
     final now = DateTime.now();
     final summary = message.length > 90 ? '${message.substring(0, 90)}...' : message;
     final record = AnalysisRecord(
@@ -147,7 +153,9 @@ class AnalysisRepository {
     required String responseLength,
     required bool emojiPreference,
   }) async {
+    await _checkDailyLimit();
     await _consumeLocalCredits(1);
+
     final suffix = emojiPreference ? ' 🙂' : '';
     final options = <String>[
       'Anladım, müsait olduğunda devam ederiz$suffix',
@@ -196,7 +204,9 @@ class AnalysisRepository {
     required String situation,
     String? relationshipType,
   }) async {
+    await _checkDailyLimit();
     await _consumeLocalCredits(2);
+
     final now = DateTime.now();
     final record = AnalysisRecord(
       id: _uuid.v4(),
@@ -241,5 +251,27 @@ class AnalysisRepository {
       throw const AppException('Insufficient credits.', code: 'insufficient_credits');
     }
     await _cache.consumeLocalCredit(fallbackBalance: current, amount: amount);
+  }
+
+  Future<void> _checkDailyLimit() async {
+    final config = await _config.initialize();
+    final isPremium = await _isPremiumActive();
+    final limit = isPremium ? config.linkedDailyLimit : config.guestDailyLimit;
+    final currentUsage = await _cache.getTodayUsageCount();
+    if (currentUsage >= limit) {
+      throw const AppException('Daily limit reached.', code: 'daily_limit');
+    }
+    await _cache.incrementTodayUsageCount();
+  }
+
+  Future<bool> _isPremiumActive() async {
+    final expiry = await _cache.getLocalPremiumExpiry();
+    if (expiry != null && expiry.isBefore(DateTime.now())) {
+      await _cache.clearLocalPremiumState();
+      return false;
+    }
+    final planType = await _cache.getLocalPlanType();
+    final status = await _cache.getLocalSubscriptionStatus();
+    return planType == 'premium' || status == 'active';
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:iliski_kocu_ai/core/config/env.dart';
 import 'package:iliski_kocu_ai/core/services/providers.dart';
 import 'package:iliski_kocu_ai/features/auth/presentation/auth_controller.dart';
@@ -20,6 +21,8 @@ class PremiumScreen extends ConsumerWidget {
     final offerings = ref.watch(productsProvider);
     final user = ref.watch(authControllerProvider).valueOrNull;
     final isAndroidSimulation = Env.useAndroidPurchaseSimulation;
+    final expiry = user?.subscriptionExpiryDate;
+    final remainingDays = expiry == null ? null : expiry.difference(DateTime.now()).inDays + 1;
 
     return AppScaffold(
       title: 'Premium ve Krediler',
@@ -39,6 +42,15 @@ class PremiumScreen extends ConsumerWidget {
                       ? 'Premium aktif'
                       : 'Premium ile daha derin analiz ve daha yüksek limitler açılır.',
                 ),
+                if (user?.isPremium == true && expiry != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Bitiş: ${DateFormat('d MMMM yyyy', 'tr_TR').format(expiry)}',
+                  ),
+                  Text(
+                    'Kalan süre: ${remainingDays != null && remainingDays > 0 ? '$remainingDays gün' : 'Bugün sona eriyor'}',
+                  ),
+                ],
                 const SizedBox(height: 12),
                 OutlinedButton(
                   onPressed: () => showModalBottomSheet<void>(
@@ -58,8 +70,8 @@ class PremiumScreen extends ConsumerWidget {
               children: [
                 const SectionHeader('Plan karşılaştırması'),
                 const SizedBox(height: 12),
-                const Text('• Standart kullanım: cihaz içi devam, kredi ve geçmiş takibi'),
-                const Text('• Premium: daha yüksek limit, derin analiz, uzun geçmiş'),
+                const Text('• Standart kullanım: günlük 3 analiz hakkı'),
+                const Text('• Premium: günlük 10 analiz hakkı'),
                 const Text('• Kredi paketleri: hızlı şekilde ek analiz hakkı'),
                 if (isAndroidSimulation) ...[
                   const SizedBox(height: 12),
@@ -95,6 +107,7 @@ class PremiumScreen extends ConsumerWidget {
                             onPressed: () async {
                               await ref.read(premiumRepositoryProvider).buyProduct(product);
                               await ref.read(authControllerProvider.notifier).refreshProfile();
+                              ref.invalidate(productsProvider);
                             },
                             child: Text(product.price),
                           ),
