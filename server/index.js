@@ -5,7 +5,10 @@ const express = require('express');
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
-const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+const provider = (process.env.AI_PROVIDER || 'openai').toLowerCase();
+const model = provider === 'groq'
+  ? process.env.GROQ_MODEL || 'llama-3.1-8b-instant'
+  : process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '*')
   .split(',')
   .map((item) => item.trim())
@@ -32,13 +35,15 @@ app.get('/health', (_, res) => {
   res.json({
     ok: true,
     service: 'hisle-ai-server',
+    provider,
     model,
   });
 });
 
 app.post('/ai', async (req, res) => {
-  if (!process.env.OPENAI_API_KEY) {
-    res.status(500).json({ error: 'openai_key_missing' });
+  const providerError = validateProviderConfig();
+  if (providerError) {
+    res.status(500).json({ error: providerError });
     return;
   }
 
@@ -60,10 +65,11 @@ app.post('/ai', async (req, res) => {
   }
 
   try {
-    const result = await callOpenAI(type, req.body);
+    const result = await callAiProvider(type, req.body);
     res.json({ result });
   } catch (error) {
     console.error('ai_request_failed', {
+      provider,
       type,
       message: error instanceof Error ? error.message : String(error),
     });
@@ -76,8 +82,33 @@ app.use((_, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Hisle AI server listening on port ${port}`);
+  console.log(`Hisle AI server listening on port ${port} using ${provider}/${model}`);
 });
+
+function validateProviderConfig() {
+  if (provider === 'groq') {
+    return process.env.GROQ_API_KEY ? null : 'groq_key_missing';
+  }
+  if (provider === 'openai') {
+    return process.env.OPENAI_API_KEY ? null : 'openai_key_missing';
+  }
+  return 'unsupported_ai_provider';
+}
+
+function providerConfig() {
+  if (provider === 'groq') {
+    return {
+      url: 'https://api.groq.com/openai/v1/chat/completions',
+      apiKey: process.env.GROQ_API_KEY,
+      errorPrefix: 'groq_http',
+    };
+  }
+  return {
+    url: 'https://api.openai.com/v1/chat/completions',
+    apiKey: process.env.OPENAI_API_KEY,
+    errorPrefix: 'openai_http',
+  };
+}
 
 function allowRequest(req) {
   const forwarded = String(req.headers['x-forwarded-for'] || '');
@@ -98,11 +129,12 @@ function isUsefulText(value) {
   return typeof value === 'string' && value.trim().length >= 2 && value.trim().length <= 6000;
 }
 
-async function callOpenAI(type, input) {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+async function callAiProvider(type, input) {
+  const config = providerConfig();
+  const response = await fetch(config.url, {
     method: 'POST',
     headers: {
-      authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      authorization: `Bearer ${config.apiKey}`,
       'content-type': 'application/json',
     },
     body: JSON.stringify({
@@ -125,7 +157,7 @@ async function callOpenAI(type, input) {
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`openai_http_${response.status}: ${text.slice(0, 300)}`);
+    throw new Error(`${config.errorPrefix}_${response.status}: ${text.slice(0, 300)}`);
   }
 
   const data = await response.json();
