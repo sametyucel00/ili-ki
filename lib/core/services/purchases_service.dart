@@ -18,6 +18,11 @@ class PurchasesService {
   Future<List<ProductDetails>> getProducts() async {
     final response =
         await _inAppPurchase.queryProductDetails(Env.premiumProductIds.toSet());
+    if (response.notFoundIDs.isNotEmpty) {
+      await _analytics.logEvent('purchase_products_missing', {
+        'ids': response.notFoundIDs.join(','),
+      });
+    }
     return response.productDetails;
   }
 
@@ -28,11 +33,36 @@ class PurchasesService {
     }
     _subscription ??= _inAppPurchase.purchaseStream.listen((purchases) async {
       for (final purchase in purchases) {
-        if (purchase.status == PurchaseStatus.purchased ||
-            purchase.status == PurchaseStatus.restored) {
-          await _analytics.logEvent(
-              'purchase_completed', {'product_id': purchase.productID});
-          await onPurchase(purchase);
+        switch (purchase.status) {
+          case PurchaseStatus.pending:
+            await _analytics.logEvent(
+              'purchase_pending',
+              {'product_id': purchase.productID},
+            );
+            break;
+          case PurchaseStatus.canceled:
+            await _analytics.logEvent(
+              'purchase_canceled',
+              {'product_id': purchase.productID},
+            );
+            break;
+          case PurchaseStatus.error:
+            await _analytics.logEvent(
+              'purchase_failed',
+              {
+                'product_id': purchase.productID,
+                'code': purchase.error?.code ?? 'unknown',
+              },
+            );
+            break;
+          case PurchaseStatus.purchased:
+          case PurchaseStatus.restored:
+            await _analytics.logEvent(
+              'purchase_completed',
+              {'product_id': purchase.productID},
+            );
+            await onPurchase(purchase);
+            break;
         }
         if (purchase.pendingCompletePurchase) {
           await _inAppPurchase.completePurchase(purchase);

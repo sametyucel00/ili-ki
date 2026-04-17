@@ -31,6 +31,7 @@ class PremiumScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final offerings = ref.watch(productsProvider);
     final history = ref.watch(purchaseHistoryProvider);
+    final config = ref.watch(appConfigProvider).valueOrNull;
     final user = ref.watch(authControllerProvider).valueOrNull;
     final activeProductId = ref.watch(premiumProductIdProvider).valueOrNull;
     final expiry = user?.subscriptionExpiryDate;
@@ -99,15 +100,19 @@ class PremiumScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const PrimaryCard(
+          PrimaryCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SectionHeader('Plan karşılaştırması'),
-                SizedBox(height: 12),
-                Text('• Standart kullanım: günlük 3 analiz hakkı'),
-                Text('• Premium: günlük 10 analiz hakkı'),
-                Text('• Kredi paketleri: hızlı şekilde ek analiz hakkı'),
+                const SectionHeader('Plan karşılaştırması'),
+                const SizedBox(height: 12),
+                Text(
+                  '• Standart kullanım: günlük ${config?.guestDailyLimit ?? 10} analiz hakkı',
+                ),
+                Text(
+                  '• Premium: günlük ${config?.linkedDailyLimit ?? 20} analiz hakkı',
+                ),
+                const Text('• Kredi paketleri: hızlı şekilde ek analiz hakkı'),
               ],
             ),
           ),
