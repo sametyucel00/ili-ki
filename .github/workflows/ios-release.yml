@@ -160,7 +160,6 @@ jobs:
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID_CLEAN" \
             PRODUCT_BUNDLE_IDENTIFIER="$IOS_BUNDLE_ID_CLEAN" \
             CODE_SIGN_STYLE=Automatic \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
             OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH"
 
       - name: Export IPA with xcodebuild
