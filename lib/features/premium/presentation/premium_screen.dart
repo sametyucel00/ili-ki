@@ -13,6 +13,10 @@ final productsProvider = FutureProvider.autoDispose<List<ProductDetails>>((ref) 
   return ref.read(premiumRepositoryProvider).loadProducts();
 });
 
+final premiumProductIdProvider = FutureProvider.autoDispose<String?>((ref) async {
+  return ref.read(localCacheServiceProvider).getLocalPremiumProductId();
+});
+
 class PremiumScreen extends ConsumerWidget {
   const PremiumScreen({super.key});
 
@@ -20,6 +24,7 @@ class PremiumScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final offerings = ref.watch(productsProvider);
     final user = ref.watch(authControllerProvider).valueOrNull;
+    final activeProductId = ref.watch(premiumProductIdProvider).valueOrNull;
     final isAndroidSimulation = Env.useAndroidPurchaseSimulation;
     final expiry = user?.subscriptionExpiryDate;
     final remainingDays = expiry == null ? null : expiry.difference(DateTime.now()).inDays + 1;
@@ -42,24 +47,28 @@ class PremiumScreen extends ConsumerWidget {
                       ? 'Premium aktif'
                       : 'Premium ile daha derin analiz ve daha yüksek limitler açılır.',
                 ),
+                if (user?.isPremium == true && activeProductId != null) ...[
+                  const SizedBox(height: 8),
+                  Text('Aktif paket: ${_planTitle(activeProductId)}'),
+                ],
                 if (user?.isPremium == true && expiry != null) ...[
                   const SizedBox(height: 8),
-                  Text(
-                    'Bitiş: ${DateFormat('d MMMM yyyy', 'tr_TR').format(expiry)}',
-                  ),
+                  Text('Bitiş: ${DateFormat('d MMMM yyyy', 'tr_TR').format(expiry)}'),
                   Text(
                     'Kalan süre: ${remainingDays != null && remainingDays > 0 ? '$remainingDays gün' : 'Bugün sona eriyor'}',
                   ),
                 ],
-                const SizedBox(height: 12),
-                OutlinedButton(
-                  onPressed: () => showModalBottomSheet<void>(
-                    context: context,
-                    isScrollControlled: true,
-                    builder: (_) => const RewardedCreditSheet(),
+                if (user?.isPremium != true) ...[
+                  const SizedBox(height: 12),
+                  OutlinedButton(
+                    onPressed: () => showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      builder: (_) => const RewardedCreditSheet(),
+                    ),
+                    child: const Text('1 reklam izle → 1 analiz kazan'),
                   ),
-                  child: const Text('1 reklam izle → 1 analiz kazan'),
-                ),
+                ],
               ],
             ),
           ),
@@ -104,20 +113,37 @@ class PremiumScreen extends ConsumerWidget {
                           title: Text(product.title),
                           subtitle: Text(product.description),
                           trailing: FilledButton(
-                            onPressed: () async {
-                              await ref.read(premiumRepositoryProvider).buyProduct(product);
-                              await ref.read(authControllerProvider.notifier).refreshProfile();
-                              ref.invalidate(productsProvider);
-                            },
-                            child: Text(product.price),
+                            onPressed: product.id == activeProductId
+                                ? null
+                                : () async {
+                                    final feedback =
+                                        await ref.read(premiumRepositoryProvider).buyProduct(product);
+                                    await ref.read(authControllerProvider.notifier).refreshProfile();
+                                    ref.invalidate(productsProvider);
+                                    ref.invalidate(premiumProductIdProvider);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text(feedback.message)),
+                                      );
+                                    }
+                                  },
+                            child: Text(_buttonTextForProduct(
+                              product: product,
+                              activeProductId: activeProductId,
+                            )),
                           ),
                         ),
                       ),
                     ),
                   OutlinedButton(
                     onPressed: () async {
-                      await ref.read(premiumRepositoryProvider).restore();
+                      final feedback = await ref.read(premiumRepositoryProvider).restore();
                       await ref.read(authControllerProvider.notifier).refreshProfile();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(feedback.message)),
+                        );
+                      }
                     },
                     child: const Text('Satın alımları geri yükle'),
                   ),
@@ -136,5 +162,29 @@ class PremiumScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  String _buttonTextForProduct({
+    required ProductDetails product,
+    required String? activeProductId,
+  }) {
+    if (product.id == activeProductId) {
+      return 'Aktif';
+    }
+    final isPremiumPlan = product.id.contains('.premium.');
+    if (isPremiumPlan && activeProductId != null && activeProductId.contains('.premium.')) {
+      return 'Paketi Değiştir';
+    }
+    return product.price;
+  }
+
+  String _planTitle(String productId) {
+    if (productId.endsWith('.yearly')) {
+      return 'Premium Yıllık';
+    }
+    if (productId.endsWith('.monthly')) {
+      return 'Premium Aylık';
+    }
+    return 'Premium';
   }
 }

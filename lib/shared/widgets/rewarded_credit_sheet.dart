@@ -18,6 +18,34 @@ class _RewardedCreditSheetState extends ConsumerState<RewardedCreditSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final user = ref.watch(authControllerProvider).valueOrNull;
+
+    if (user?.isPremium == true) {
+      return Padding(
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 16,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SectionHeader(
+              'Premium aktif',
+              subtitle: 'Premium kullanıcılar için reklam izleme seçeneği kapalıdır.',
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Kapat'),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Padding(
       padding: EdgeInsets.only(
         left: 20,

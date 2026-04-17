@@ -11,6 +11,7 @@ class LocalCacheService {
   static const _subscriptionStatusKey = 'local_subscription_status';
   static const _userProfileKey = 'local_user_profile';
   static const _premiumExpiryKey = 'local_premium_expiry';
+  static const _premiumProductIdKey = 'local_premium_product_id';
   static const _dailyUsageCountKey = 'daily_usage_count';
   static const _dailyUsageDateKey = 'daily_usage_date';
 
@@ -111,11 +112,20 @@ class LocalCacheService {
     return DateTime.tryParse(raw);
   }
 
-  Future<void> setLocalPremiumActive({required DateTime expiryDate}) async {
+  Future<String?> getLocalPremiumProductId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_premiumProductIdKey);
+  }
+
+  Future<void> setLocalPremiumActive({
+    required DateTime expiryDate,
+    required String productId,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_planTypeKey, 'premium');
     await prefs.setString(_subscriptionStatusKey, 'active');
     await prefs.setString(_premiumExpiryKey, expiryDate.toIso8601String());
+    await prefs.setString(_premiumProductIdKey, productId);
   }
 
   Future<void> clearLocalPremiumState() async {
@@ -123,6 +133,7 @@ class LocalCacheService {
     await prefs.remove(_planTypeKey);
     await prefs.remove(_subscriptionStatusKey);
     await prefs.remove(_premiumExpiryKey);
+    await prefs.remove(_premiumProductIdKey);
   }
 
   Future<int> getTodayUsageCount() async {
