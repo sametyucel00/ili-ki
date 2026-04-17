@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iliski_kocu_ai/core/services/providers.dart';
+import 'package:iliski_kocu_ai/features/auth/presentation/auth_controller.dart';
 import 'package:iliski_kocu_ai/shared/models/analysis_record.dart';
 
 final analysisActionProvider =
@@ -23,6 +24,7 @@ class AnalysisActionController extends AsyncNotifier<AnalysisRecord?> {
             relationshipType: relationshipType,
           ),
     );
+    await _refreshUsageStateIfSuccessful();
   }
 
   Future<void> generateReplies({
@@ -42,6 +44,7 @@ class AnalysisActionController extends AsyncNotifier<AnalysisRecord?> {
             emojiPreference: emojiPreference,
           ),
     );
+    await _refreshUsageStateIfSuccessful();
   }
 
   Future<void> createStrategy({
@@ -55,5 +58,14 @@ class AnalysisActionController extends AsyncNotifier<AnalysisRecord?> {
             relationshipType: relationshipType,
           ),
     );
+    await _refreshUsageStateIfSuccessful();
+  }
+
+  Future<void> _refreshUsageStateIfSuccessful() async {
+    if (!state.hasValue || state.valueOrNull == null) {
+      return;
+    }
+    ref.invalidate(dailyUsageProvider);
+    await ref.read(authControllerProvider.notifier).refreshProfile();
   }
 }

@@ -40,6 +40,10 @@ final rewardedAdServiceProvider = Provider<RewardedAdService>(
   (ref) => RewardedAdService(ref.watch(analyticsServiceProvider)),
 );
 
+final dailyUsageProvider = FutureProvider<int>((ref) async {
+  return ref.read(localCacheServiceProvider).getTodayUsageCount();
+});
+
 final authRepositoryProvider = Provider<AuthRepository>(
   (ref) => AuthRepository(
     analytics: ref.watch(analyticsServiceProvider),

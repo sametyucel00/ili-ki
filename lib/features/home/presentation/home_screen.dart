@@ -6,10 +6,6 @@ import 'package:iliski_kocu_ai/core/services/providers.dart';
 import 'package:iliski_kocu_ai/features/auth/presentation/auth_controller.dart';
 import 'package:iliski_kocu_ai/shared/widgets/common_widgets.dart';
 
-final dailyUsageProvider = FutureProvider<int>((ref) async {
-  return ref.read(localCacheServiceProvider).getTodayUsageCount();
-});
-
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
