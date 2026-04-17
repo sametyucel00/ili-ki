@@ -308,7 +308,9 @@ function normalizeReplyAction(value) {
     looksLikeReplyText(action) ||
     looksTooCold(action) ||
     looksMirroredOrSelfReferential(action) ||
-    action.trim().endsWith('?')
+    action.trim().endsWith('?') ||
+    action.toLocaleLowerCase('tr').includes('bana haber ver') ||
+    action.toLocaleLowerCase('tr').includes('istersen konuşabiliriz')
   ) {
     return 'Karşı tarafın alan ihtiyacını kabul eden, sakin ve kapıyı açık bırakan kısa bir cevap seç.';
   }
@@ -337,7 +339,8 @@ function isGoodReplyOption(text) {
     !looksLikeMirroredIncomingMessage(trimmed) &&
     !looksMirroredOrSelfReferential(trimmed) &&
     !looksTooCold(trimmed) &&
-    !looksPushy(trimmed)
+    !looksPushy(trimmed) &&
+    !trimmed.includes('?')
   );
 }
 
@@ -452,13 +455,17 @@ function adjustReplyLengthAndEmoji(text, responseLength, wantsEmoji) {
   let result = text;
 
   if (responseLength.includes('kısa') || responseLength.includes('kisa')) {
-    result = result
-      .replace(' kendine zaman ayırman iyi olabilir.', '.')
-      .replace(' Hazır olduğunda konuşabiliriz.', ' Uygun olduğunda konuşuruz.')
-      .replace(' biraz alan bırakıyorum.', '')
-      .replace(' seni zorlamak istemem.', '')
-      .replace(/\s+/g, ' ')
-      .trim();
+    if (result.includes('kendine zaman ayırman iyi olabilir')) {
+      result = 'Anlıyorum, uygun olduğunda konuşuruz.';
+    } else if (result.includes('seni zorlamak istemem')) {
+      result = 'Tamam, müsait hissettiğinde yazarsın.';
+    } else if (result.includes('biraz alan bırakıyorum')) {
+      result = 'Sorun değil, hazır olduğunda konuşuruz.';
+    } else if (result.includes('alanına saygı duyuyorum')) {
+      result = 'Tamam, uygun olduğunda yazarsın.';
+    } else {
+      result = result.replace(/\s+/g, ' ').trim();
+    }
   }
 
   if (wantsEmoji && !/[🙂😊🌿]/.test(result)) {
