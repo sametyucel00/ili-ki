@@ -127,6 +127,58 @@ jobs:
           </plist>
           EOF
 
+      - name: Inject Runner signing settings
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
+        run: |
+          APPLE_TEAM_ID_CLEAN=$(printf "%s" "$APPLE_TEAM_ID" | tr -d '\r\n')
+          IOS_BUNDLE_ID_CLEAN=$(printf "%s" "$IOS_BUNDLE_ID" | tr -d '\r\n')
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          import re
+
+          path = Path("ios/Runner.xcodeproj/project.pbxproj")
+          text = path.read_text()
+          team_id = os.environ["APPLE_TEAM_ID_CLEAN"]
+          bundle_id = os.environ["IOS_BUNDLE_ID_CLEAN"]
+
+          runner_config_ids = [
+              "97C147061CF9000F007C117D",  # Debug
+              "97C147071CF9000F007C117D",  # Release
+              "249021D4217E4FDB00AE95B9",  # Profile
+          ]
+
+          for config_id in runner_config_ids:
+              pattern = re.compile(
+                  rf'({config_id} /\* .*? \*/ = \{{.*?buildSettings = \{{)(.*?)(\n\s*\}};\n\s*name = )',
+                  re.DOTALL,
+              )
+              match = pattern.search(text)
+              if not match:
+                  raise SystemExit(f"Could not find Runner config block {config_id}")
+
+              settings = match.group(2)
+              replacements = {
+                  "PRODUCT_BUNDLE_IDENTIFIER": f"{bundle_id};",
+                  "DEVELOPMENT_TEAM": f"{team_id};",
+                  "CODE_SIGN_STYLE": "Automatic;",
+                  "CODE_SIGN_IDENTITY[sdk=iphoneos*]": "\"Apple Distribution\";",
+              }
+
+              for key, value in replacements.items():
+                  key_pattern = re.compile(rf'(\b{re.escape(key)}\b = )(.*?);')
+                  if key_pattern.search(settings):
+                      settings = key_pattern.sub(rf'\1{value}', settings)
+                  else:
+                      settings += f"\n\t\t\t\t{key} = {value}"
+
+              text = text[:match.start(2)] + settings + text[match.end(2):]
+
+          path.write_text(text)
+          PY
+
       - name: Debug Xcode signing settings
         env:
           IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
@@ -143,13 +195,8 @@ jobs:
         run: flutter build ios --release --no-codesign --dart-define=AI_BACKEND_URL="${{ secrets.AI_BACKEND_URL }}"
 
       - name: Archive app with xcodebuild
-        env:
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
         run: |
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-          APPLE_TEAM_ID_CLEAN=$(printf "%s" "$APPLE_TEAM_ID" | tr -d '\r\n')
-          IOS_BUNDLE_ID_CLEAN=$(printf "%s" "$IOS_BUNDLE_ID" | tr -d '\r\n')
           xcodebuild \
             -workspace ios/Runner.xcworkspace \
             -scheme Runner \
@@ -157,12 +204,6 @@ jobs:
             -sdk iphoneos \
             -archivePath build/ios/archive/Runner.xcarchive \
             archive \
-            DEVELOPMENT_TEAM="$APPLE_TEAM_ID_CLEAN" \
-            PRODUCT_BUNDLE_IDENTIFIER="$IOS_BUNDLE_ID_CLEAN" \
-            PROVISIONING_PROFILE="$IOS_PROFILE_UUID" \
-            PROVISIONING_PROFILE_SPECIFIER="$IOS_PROFILE_NAME_RESOLVED" \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
             OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH"
 
       - name: Export IPA with xcodebuild
