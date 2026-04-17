@@ -112,6 +112,38 @@ jobs:
           </plist>
           EOF
 
+      - name: Inject signing settings into Xcode project
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
+          IOS_PROFILE_NAME: ${{ secrets.IOS_PROFILE_NAME }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+
+          path = Path("ios/Runner.xcodeproj/project.pbxproj")
+          text = path.read_text()
+
+          bundle_id = os.environ["IOS_BUNDLE_ID"]
+          team_id = os.environ["APPLE_TEAM_ID"]
+          profile_name = os.environ["IOS_PROFILE_NAME"]
+
+          target = f'PRODUCT_BUNDLE_IDENTIFIER = {bundle_id};'
+          replacement = (
+              f'DEVELOPMENT_TEAM = {team_id};\n'
+              f'\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = {bundle_id};\n'
+              f'\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "{profile_name}";\n'
+              f'\t\t\t\tCODE_SIGN_STYLE = Manual;'
+          )
+
+          if target not in text:
+              raise SystemExit("Could not find Runner bundle identifier in project.pbxproj")
+
+          text = text.replace(target, replacement)
+          path.write_text(text)
+          PY
+
       - name: Debug Xcode signing settings
         env:
           IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
