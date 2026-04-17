@@ -401,10 +401,10 @@ function ensureReplyOptions(value, input, signals) {
   const merged = [...options, ...fallback].filter(uniqueByNormalizedText);
 
   if (options.length < 2) {
-    return fallback.slice(0, 3);
+    return completeReplyOptions(fallback, input, signals).slice(0, 3);
   }
 
-  return merged.slice(0, 3);
+  return completeReplyOptions(merged, input, signals).slice(0, 3);
 }
 
 function isGoodReplyOption(text, signals) {
@@ -852,9 +852,9 @@ function buildReplySet(input, signals) {
 
   if (signals.closure && tone !== 'closure') {
     replies = [
-      'Anladım, seni zorlamayacağım. Kendine iyi bak.',
-      'Tamam, ben de burada uzatmayayım.',
-      'Mesajını aldım, burada bırakıyorum.',
+      'Anladım, seni zorlamayacağım. Ben de burada durayım.',
+      'Tamam, bunu daha fazla uzatmamayı tercih ederim.',
+      'Mesajını aldım. Bu noktada burada bırakmak daha doğru geliyor.',
     ];
   }
 
@@ -865,6 +865,66 @@ function buildReplySet(input, signals) {
   }
 
   return replies.filter((item) => isGoodReplyOption(item, signals)).slice(0, 3);
+}
+
+function completeReplyOptions(items, input, signals) {
+  const completed = [...items];
+  const safetyPool = buildSafetyReplyPool(input, signals);
+
+  for (const candidate of safetyPool) {
+    if (completed.length >= 3) {
+      break;
+    }
+    if (!completed.some((item) => normalizeUniqueText(item) === normalizeUniqueText(candidate))) {
+      completed.push(candidate);
+    }
+  }
+
+  return completed.filter((item) => isGoodReplyOption(item, signals)).slice(0, 3);
+}
+
+function buildSafetyReplyPool(input, signals) {
+  const tone = normalizeTone(input?.tone);
+  const wantsEmoji = Boolean(input?.emojiPreference);
+  let pool = [
+    'Anlıyorum, biraz alan bırakıyorum. Uygun olduğunda konuşuruz.',
+    'Tamam, seni zorlamayacağım. Hazır olduğunda yazabilirsin.',
+    'Sorun değil, şu an geri çekiliyorum. Sonra konuşabiliriz.',
+    'Mesajını aldım. Biraz alan tanıyorum, uygun olduğunda konuşuruz.',
+    'Anladım, baskı kurmayacağım. Hazır olduğunda dönüş yaparsın.',
+  ];
+
+  if (tone === 'closure' || signals.closure) {
+    pool = [
+      'Anladım, ben de burada durmayı tercih ederim.',
+      'Tamam, bunu daha fazla uzatmayacağım.',
+      'Mesajını aldım. Burada bırakmak daha doğru geliyor.',
+      'Ben de burada kalayım; uzatmak istemiyorum.',
+      'Anladım, bu noktada geri çekiliyorum.',
+    ];
+  } else if (tone === 'assertive') {
+    pool = [
+      'Anladım, seni zorlamayacağım. Ama sonra daha net konuşmak isterim.',
+      'Tamam, biraz alan tanıyorum. Uygun olduğunda bunu açık konuşabiliriz.',
+      'Mesajını aldım. Şimdilik geri çekiliyorum, sonra netleşebiliriz.',
+      ...pool,
+    ];
+  } else if (tone === 'flirt') {
+    pool = [
+      'Tamam, biraz alan bırakıyorum. Hazır olduğunda tatlı tatlı konuşuruz.',
+      'Anladım, seni zorlamayayım. Sonra daha güzel devam ederiz.',
+      'Sorun değil, biraz geri çekileyim. Uygun olduğunda yazarsın.',
+      ...pool,
+    ];
+  }
+
+  if (wantsEmoji && tone !== 'closure' && !signals.closure) {
+    pool = pool.map((item) => addEmoji(item));
+  } else {
+    pool = pool.map(removeEmoji);
+  }
+
+  return pool.filter((item) => isGoodReplyOption(item, signals));
 }
 
 function normalizeTone(value) {
