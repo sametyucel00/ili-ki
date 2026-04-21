@@ -152,7 +152,8 @@ jobs:
             --release \
             --no-codesign \
             --build-number="${IOS_BUILD_NUMBER}" \
-            --dart-define=AI_BACKEND_URL="${{ secrets.AI_BACKEND_URL }}"
+            --dart-define=AI_BACKEND_URL="${{ secrets.AI_BACKEND_URL }}" \
+            --dart-define=AI_PROVIDER_NAME=Groq
 
       - name: Debug build versions
         run: |

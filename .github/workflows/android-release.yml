@@ -60,14 +60,16 @@ jobs:
           flutter build apk \
             --release \
             --build-number="${ANDROID_BUILD_NUMBER}" \
-            --dart-define=AI_BACKEND_URL="${{ secrets.AI_BACKEND_URL }}"
+            --dart-define=AI_BACKEND_URL="${{ secrets.AI_BACKEND_URL }}" \
+            --dart-define=AI_PROVIDER_NAME=Groq
 
       - name: Build App Bundle
         run: |
           flutter build appbundle \
             --release \
             --build-number="${ANDROID_BUILD_NUMBER}" \
-            --dart-define=AI_BACKEND_URL="${{ secrets.AI_BACKEND_URL }}"
+            --dart-define=AI_BACKEND_URL="${{ secrets.AI_BACKEND_URL }}" \
+            --dart-define=AI_PROVIDER_NAME=Groq
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
