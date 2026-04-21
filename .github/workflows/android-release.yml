@@ -15,6 +15,7 @@ jobs:
   build-android:
     runs-on: ubuntu-latest
     env:
+      ANDROID_BUILD_NUMBER: ${{ github.run_number }}
       ANDROID_KEYSTORE_PATH: android/app/upload-keystore.jks
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
@@ -49,11 +50,24 @@ jobs:
       - name: Flutter pub get
         run: flutter pub get
 
+      - name: Debug Android build version
+        run: |
+          echo "Using Android build number: ${ANDROID_BUILD_NUMBER}"
+          grep "^version:" pubspec.yaml || true
+
       - name: Build APK
-        run: flutter build apk --release --dart-define=AI_BACKEND_URL="${{ secrets.AI_BACKEND_URL }}"
+        run: |
+          flutter build apk \
+            --release \
+            --build-number="${ANDROID_BUILD_NUMBER}" \
+            --dart-define=AI_BACKEND_URL="${{ secrets.AI_BACKEND_URL }}"
 
       - name: Build App Bundle
-        run: flutter build appbundle --release --dart-define=AI_BACKEND_URL="${{ secrets.AI_BACKEND_URL }}"
+        run: |
+          flutter build appbundle \
+            --release \
+            --build-number="${ANDROID_BUILD_NUMBER}" \
+            --dart-define=AI_BACKEND_URL="${{ secrets.AI_BACKEND_URL }}"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
