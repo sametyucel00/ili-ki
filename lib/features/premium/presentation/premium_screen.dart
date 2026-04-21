@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:iliski_kocu_ai/core/constants/app_links.dart';
 import 'package:iliski_kocu_ai/core/services/providers.dart';
+import 'package:iliski_kocu_ai/core/utils/link_launcher.dart';
 import 'package:iliski_kocu_ai/features/auth/presentation/auth_controller.dart';
 import 'package:iliski_kocu_ai/features/premium/data/premium_repository.dart';
 import 'package:iliski_kocu_ai/shared/widgets/common_widgets.dart';
@@ -136,6 +138,38 @@ class _PremiumScreenState extends ConsumerState<PremiumScreen> {
                   '• Premium: günlük ${config?.linkedDailyLimit ?? 20} analiz hakkı',
                 ),
                 const Text('• Kredi paketleri: hızlı şekilde ek analiz hakkı'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          PrimaryCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SectionHeader('Abonelik bilgileri'),
+                const SizedBox(height: 12),
+                const Text(
+                  'Premium Aylık ve Premium Yıllık planları otomatik yenilenen aboneliktir. Güncel fiyatlar satın al butonlarında mağaza fiyatı olarak gösterilir.',
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Abonelik, dönem bitiminden en az 24 saat önce iptal edilmezse otomatik yenilenir. Yönetim ve iptal işlemleri App Store veya Google Play abonelik ayarlarından yapılır.',
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    OutlinedButton(
+                      onPressed: () => openExternalLink(AppLinks.termsUrl),
+                      child: const Text('Kullanım Koşulları (EULA)'),
+                    ),
+                    OutlinedButton(
+                      onPressed: () => openExternalLink(AppLinks.privacyUrl),
+                      child: const Text('Gizlilik Politikası'),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),

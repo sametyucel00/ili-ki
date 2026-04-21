@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:iliski_kocu_ai/core/config/env.dart';
+import 'package:iliski_kocu_ai/core/services/providers.dart';
 import 'package:iliski_kocu_ai/features/auth/presentation/auth_controller.dart';
 import 'package:iliski_kocu_ai/shared/widgets/common_widgets.dart';
 
@@ -14,6 +16,7 @@ class ProfileScreen extends ConsumerWidget {
         ? user!.displayName!
         : 'İsimsiz kullanıcı';
     final expiry = user?.subscriptionExpiryDate;
+    final aiConsent = ref.watch(aiDataConsentProvider).valueOrNull ?? false;
 
     return AppScaffold(
       title: 'Profil ve Ayarlar',
@@ -23,8 +26,10 @@ class ProfileScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(displayName,
-                    style: Theme.of(context).textTheme.titleLarge),
+                Text(
+                  displayName,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
                 const SizedBox(height: 8),
                 Text(
                   user?.isPremium == true
@@ -34,7 +39,8 @@ class ProfileScreen extends ConsumerWidget {
                 if (user?.isPremium == true && expiry != null) ...[
                   const SizedBox(height: 8),
                   Text(
-                      'Premium bitişi: ${DateFormat('d MMMM yyyy', 'tr_TR').format(expiry)}'),
+                    'Premium bitişi: ${DateFormat('d MMMM yyyy', 'tr_TR').format(expiry)}',
+                  ),
                 ],
                 const SizedBox(height: 14),
                 OutlinedButton(
@@ -43,6 +49,32 @@ class ProfileScreen extends ConsumerWidget {
                   child: const Text('İsmi değiştir'),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          PrimaryCard(
+            child: SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: aiConsent,
+              onChanged: (value) async {
+                await ref.read(localCacheServiceProvider).setAiDataConsent(value);
+                ref.invalidate(aiDataConsentProvider);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        value
+                            ? '${Env.aiProviderName} ile AI analizi izni açıldı.'
+                            : 'Dış AI veri paylaşımı kapatıldı. Uygulama yerel modda devam eder.',
+                      ),
+                    ),
+                  );
+                }
+              },
+              title: const Text('AI veri paylaşım izni'),
+              subtitle: Text(
+                '${Env.aiProviderName} tarafına mesaj metni, bağlam ve seçili seçeneklerin gönderilmesine izin ver.',
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -85,7 +117,8 @@ class ProfileScreen extends ConsumerWidget {
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                      content: Text('Yeni bir yerel profil oluşturuldu.')),
+                    content: Text('Yeni bir yerel profil oluşturuldu.'),
+                  ),
                 );
               }
             },
@@ -98,7 +131,10 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Future<void> _showRenameDialog(
-      BuildContext context, WidgetRef ref, String? currentName) async {
+    BuildContext context,
+    WidgetRef ref,
+    String? currentName,
+  ) async {
     final controller = TextEditingController(text: currentName ?? '');
     await showDialog<void>(
       context: context,

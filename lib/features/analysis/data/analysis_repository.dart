@@ -125,12 +125,15 @@ class AnalysisRepository {
     await _consumeLocalCredits(1);
 
     final isPremium = await _isPremiumActive();
-    final remote = await _aiBackend.createMessageAnalysis(
-      message: message,
-      context: context,
-      relationshipType: relationshipType,
-      isPremium: isPremium,
-    );
+    final hasConsent = await _cache.hasAiDataConsent();
+    final remote = hasConsent
+        ? await _aiBackend.createMessageAnalysis(
+            message: message,
+            context: context,
+            relationshipType: relationshipType,
+            isPremium: isPremium,
+          )
+        : null;
     if (remote != null) {
       final now = DateTime.now();
       final record = AnalysisRecord(
@@ -229,14 +232,17 @@ class AnalysisRepository {
     await _consumeLocalCredits(1);
 
     final isPremium = await _isPremiumActive();
-    final remote = await _aiBackend.createReplyGeneration(
-      message: message,
-      context: context,
-      tone: tone,
-      responseLength: responseLength,
-      emojiPreference: emojiPreference,
-      isPremium: isPremium,
-    );
+    final hasConsent = await _cache.hasAiDataConsent();
+    final remote = hasConsent
+        ? await _aiBackend.createReplyGeneration(
+            message: message,
+            context: context,
+            tone: tone,
+            responseLength: responseLength,
+            emojiPreference: emojiPreference,
+            isPremium: isPremium,
+          )
+        : null;
     if (remote != null) {
       final now = DateTime.now();
       final record = AnalysisRecord(
@@ -331,11 +337,14 @@ class AnalysisRepository {
     await _consumeLocalCredits(2);
 
     final isPremium = await _isPremiumActive();
-    final remote = await _aiBackend.createSituationStrategy(
-      situation: situation,
-      relationshipType: relationshipType,
-      isPremium: isPremium,
-    );
+    final hasConsent = await _cache.hasAiDataConsent();
+    final remote = hasConsent
+        ? await _aiBackend.createSituationStrategy(
+            situation: situation,
+            relationshipType: relationshipType,
+            isPremium: isPremium,
+          )
+        : null;
     if (remote != null) {
       final now = DateTime.now();
       final record = AnalysisRecord(

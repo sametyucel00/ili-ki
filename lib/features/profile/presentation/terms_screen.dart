@@ -26,7 +26,7 @@ class TermsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               const Text(
-                'Abonelikler ve kredi paketleri yalnızca uygulama içi satın alma yoluyla sunulur. Yenileme, fiyat, iptal ve geri yükleme kuralları ilgili mağaza politikalarına tabidir.',
+                'Premium Aylık ve Premium Yıllık planları otomatik yenilenen aboneliktir. Yenileme, fiyat, iptal ve geri yükleme kuralları ilgili mağaza politikalarına tabidir.',
               ),
               const SizedBox(height: 12),
               const Text(

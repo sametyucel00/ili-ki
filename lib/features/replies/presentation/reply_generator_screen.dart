@@ -6,6 +6,7 @@ import 'package:iliski_kocu_ai/core/services/providers.dart';
 import 'package:iliski_kocu_ai/core/utils/error_text.dart';
 import 'package:iliski_kocu_ai/features/analysis/presentation/analysis_controller.dart';
 import 'package:iliski_kocu_ai/shared/models/analysis_record.dart';
+import 'package:iliski_kocu_ai/shared/widgets/ai_consent_dialog.dart';
 import 'package:iliski_kocu_ai/shared/widgets/common_widgets.dart';
 import 'package:iliski_kocu_ai/shared/widgets/rewarded_credit_sheet.dart';
 
@@ -90,8 +91,9 @@ class _ReplyGeneratorScreenState extends ConsumerState<ReplyGeneratorScreen> {
           ElevatedButton(
             onPressed: state.isLoading
                 ? null
-                : () =>
-                    ref.read(analysisActionProvider.notifier).generateReplies(
+                : () async {
+                    await ensureAiDataConsent(context, ref);
+                    await ref.read(analysisActionProvider.notifier).generateReplies(
                           inputText: messageController.text.trim(),
                           context: contextController.text.trim().isEmpty
                               ? null
@@ -99,7 +101,8 @@ class _ReplyGeneratorScreenState extends ConsumerState<ReplyGeneratorScreen> {
                           tone: tone,
                           responseLength: responseLength,
                           emojiPreference: emojiPreference,
-                        ),
+                        );
+                  },
             child: Text(state.isLoading ? 'Üretiliyor...' : 'Cevapları Üret'),
           ),
           const SizedBox(height: 18),

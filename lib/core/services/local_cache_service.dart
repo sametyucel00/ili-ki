@@ -15,6 +15,8 @@ class LocalCacheService {
   static const _purchaseHistoryKey = 'local_purchase_history';
   static const _dailyUsageCountKey = 'daily_usage_count';
   static const _dailyUsageDateKey = 'daily_usage_date';
+  static const _aiDataConsentKey = 'ai_data_consent_v1';
+  static const _aiDataConsentPromptedKey = 'ai_data_consent_prompted_v1';
 
   Future<List<Map<String, dynamic>>> readCachedAnalyses() async {
     final prefs = await SharedPreferences.getInstance();
@@ -185,6 +187,22 @@ class LocalCacheService {
     final next = (prefs.getInt(_dailyUsageCountKey) ?? 0) + 1;
     await prefs.setInt(_dailyUsageCountKey, next);
     return next;
+  }
+
+  Future<bool> hasAiDataConsent() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_aiDataConsentKey) ?? false;
+  }
+
+  Future<bool> hasAiDataConsentPrompted() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_aiDataConsentPromptedKey) ?? false;
+  }
+
+  Future<void> setAiDataConsent(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_aiDataConsentKey, value);
+    await prefs.setBool(_aiDataConsentPromptedKey, true);
   }
 
   String _todayKey() {

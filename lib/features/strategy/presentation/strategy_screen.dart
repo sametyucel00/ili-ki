@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:iliski_kocu_ai/core/utils/error_text.dart';
 import 'package:iliski_kocu_ai/features/analysis/presentation/analysis_controller.dart';
 import 'package:iliski_kocu_ai/shared/models/analysis_record.dart';
+import 'package:iliski_kocu_ai/shared/widgets/ai_consent_dialog.dart';
 import 'package:iliski_kocu_ai/shared/widgets/common_widgets.dart';
 import 'package:iliski_kocu_ai/shared/widgets/rewarded_credit_sheet.dart';
 
@@ -63,11 +64,13 @@ class _StrategyScreenState extends ConsumerState<StrategyScreen> {
           ElevatedButton(
             onPressed: state.isLoading
                 ? null
-                : () =>
-                    ref.read(analysisActionProvider.notifier).createStrategy(
+                : () async {
+                    await ensureAiDataConsent(context, ref);
+                    await ref.read(analysisActionProvider.notifier).createStrategy(
                           inputText: situationController.text.trim(),
                           relationshipType: relationshipType,
-                        ),
+                        );
+                  },
             child: Text(state.isLoading ? 'Yorumlanıyor...' : 'Analiz Et'),
           ),
           const SizedBox(height: 18),

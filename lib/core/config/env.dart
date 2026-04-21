@@ -21,6 +21,11 @@ class Env {
     defaultValue: 28,
   );
 
+  static const aiProviderName = String.fromEnvironment(
+    'AI_PROVIDER_NAME',
+    defaultValue: 'Groq',
+  );
+
   static const premiumProductIds = <String>[
     'com.hisle.app.premium.monthly',
     'com.hisle.app.premium.yearly',

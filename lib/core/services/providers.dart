@@ -44,6 +44,10 @@ final dailyUsageProvider = FutureProvider<int>((ref) async {
   return ref.read(localCacheServiceProvider).getTodayUsageCount();
 });
 
+final aiDataConsentProvider = FutureProvider<bool>((ref) async {
+  return ref.read(localCacheServiceProvider).hasAiDataConsent();
+});
+
 final authRepositoryProvider = Provider<AuthRepository>(
   (ref) => AuthRepository(
     analytics: ref.watch(analyticsServiceProvider),
