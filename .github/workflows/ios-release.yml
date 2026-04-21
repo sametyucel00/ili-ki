@@ -14,6 +14,8 @@ on:
 jobs:
   build-ios:
     runs-on: macos-latest
+    env:
+      IOS_BUILD_NUMBER: ${{ github.run_number }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -145,7 +147,18 @@ jobs:
           echo "Expected profile name: $IOS_PROFILE_NAME_RESOLVED"
 
       - name: Build iOS app without codesign
-        run: flutter build ios --release --no-codesign --dart-define=AI_BACKEND_URL="${{ secrets.AI_BACKEND_URL }}"
+        run: |
+          flutter build ios \
+            --release \
+            --no-codesign \
+            --build-number="${IOS_BUILD_NUMBER}" \
+            --dart-define=AI_BACKEND_URL="${{ secrets.AI_BACKEND_URL }}"
+
+      - name: Debug build versions
+        run: |
+          echo "Using iOS build number: ${IOS_BUILD_NUMBER}"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" ios/Runner/Info.plist || true
+          /usr/libexec/PlistBuddy -c "Print :CFBundleVersion" ios/Runner/Info.plist || true
 
       - name: Archive app with xcodebuild
         run: |
